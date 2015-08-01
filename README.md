@@ -3,12 +3,14 @@
 
 Overview
 
-Get beautiful drop layout for Draco Summoning Circle! (know as 最大火力配置 in Japan)
+Generate beautiful drop layout for Draco Summoning Circle! (know as 最大火力配置 in Japan)
 
 ## Description
 
+####31-11
 ![4390305789439C6L3W0](https://github.com/gumboshi/pzdr_saidai/blob/master/file/4390305789439C6L3W0.png)
 
+####25-17
 ![25-17ID463222794863C11L0W6.png](https://github.com/gumboshi/pzdr_saidai/blob/master/file/25-17ID463222794863C11L0W6.png)
 
 ## Demo
