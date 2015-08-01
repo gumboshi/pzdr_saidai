@@ -1,3 +1,5 @@
+/* author gumboshi <gumboshi@gmail.com> */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -997,8 +999,6 @@ void simulate_average(void (*gt)(long long, long long*), int (*os)(long long*, i
       if(combo_counter < cmin){
 	cmin = combo_counter;
       }
-      /* pave += power / 10000.0; */
-      /* cave += (float)combo_counter / 10000.0; */
       pave += power;
       cave += combo_counter;
     }
