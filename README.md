@@ -1,13 +1,13 @@
-[Puzzle & Dragons] Perfect Draco Summoning Circle (know as 最大火力配置 in Japan)
+[Puzzle & Dragons] Perfect Draco Summoning Circle
 ====
 
 Overview
 
-Get beautiful drop layout for Draco Summoning Circle!
+Get beautiful drop layout for Draco Summoning Circle! (know as 最大火力配置 in Japan)
 
 ## Description
 
-(https://github.com/gumboshi/pzdr_saidai/blob/master/file/4390305789439C6L3W0.png)
+![4390305789439C6L3W0](https://github.com/gumboshi/pzdr_saidai/blob/master/file/4390305789439C6L3W0.png)
 
 ## Demo
 
