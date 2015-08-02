@@ -3,7 +3,7 @@ Perfect Draco Summoning Circle
 
 Generate beautiful drop layout for Draco Summoning Circle. (know as 最大火力配置 in Japan)
 
-Reference Movie (https://youtu.be/Sp9k5t3krqQ)(Japanese)
+Reference Movie [フレイヤちゃんと学ぶ3列消し](https://youtu.be/Sp9k5t3krqQ)
 
 ## Demo
 Output example...
