@@ -3,7 +3,6 @@ Perfect Draco Summoning Circle
 
 Generate beautiful drop layout for Draco Summoning Circle. (know as 最大火力配置 in Japan)
 
-
 ## Demo
 Output example...
 ####31-11
