@@ -80,9 +80,38 @@ Now available: -hero, -laku(-paru), -krishna, -sonia
 ```
 $ ./pzdr_saidai.exe -l 9 -w 2
 ```
+#### Change the number of Orbs
+If you specify -s and -e like following, simulation executes 10-20, 11-19, 12-18, 13-17, and 14-16
+```
+$ ./pzdr_saidai.exe -s 10 -e 14 -normal
+```
 
 #### Output 
 
+Default output form is like following, 
+```
+13-17, line 0, way 0
+rank,tableID      ,power
+   0,     36923626,    12.750
+   1,     36924130,    12.750
+   2,     45312202,    12.750
+   3,     49049346,    12.750
+   4,     49311426,    12.750
+   5,     74074853,    12.750
+   6,     74075112,    12.750
+   7,     74119464,    12.750
+   .          .		 .
+   .	      .		 .
+   .	      .		 .
+  99,    116238594,    12.000
+```
+
+
+If you specify -ave, 10000 times simulation will execute to evaluate the influence of Orbs which fall from the outside of the table.
+```
+$ ./pzdr_saidai.exe -ave
+```
+And also output will be change to following
 
 
 
