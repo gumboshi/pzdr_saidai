@@ -25,11 +25,57 @@ This program supports 4x5, 5x6, and 6x7 tables. (It seems that not implemented y
 If you want to use GPU version, CUDA toolkits (https://developer.nvidia.com/cuda-downloads) are required.
 
 
-## Usage
-Now writing...
-
 ## Install
-Now writing...
+
+To use GPU, 
+```shell
+$ git clone https://github.com/gumboshi/pzdr_saidai.git
+$ cd pzdr_saidai
+$ make gpu
+```
+You don't need gpu version,
+```shell
+$ git clone https://github.com/gumboshi/pzdr_saidai.git
+$ cd pzdr_saidai
+$ make
+```
+
+## Usage
+
+#### Change table size
+To use 4x5 table
+```
+$ ./pzdr_saidai.exe -small
+```
+To use 5x6 table (default)
+```
+$ ./pzdr_saidai.exe -normal
+```
+To use 6x7 table
+```
+$ ./pzdr_saidai.exe -big
+```
+
+#### Change Leader Skill
+Heros (ex. Perseus, Pandora)
+```
+$ ./pzdr_saidai.exe -hero
+```
+Lakshmi and Parvati
+```
+$ ./pzdr_saidai.exe -laku (or -paru)
+```
+Krishna (Ultimate)
+```
+$ ./pzdr_saidai.exe -krishna
+```
+Now available: -hero, -laku(-paru), -krishna, -sonia 
+
+#### Change the number of awoken skills
+9 Enhanced ATT, 2 Two-pronged ATT
+```
+$ ./pzdr_saidai.exe -l 9 -w 2
+```
 
 
 ## Licence
