@@ -205,6 +205,4 @@ THE SOFTWARE.
 
 ## Author
 
-[gumboshi](https://github.com/gumboshi)
-
-[Movies](https://www.youtube.com/channel/UCzN57XZ4pEYWtEtOvNt00Ng)
+[gumboshi](https://github.com/gumboshi)  [Movies](https://www.youtube.com/channel/UCzN57XZ4pEYWtEtOvNt00Ng)
