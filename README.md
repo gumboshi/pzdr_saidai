@@ -100,19 +100,46 @@ rank,tableID      ,power
    5,     74074853,    12.750
    6,     74075112,    12.750
    7,     74119464,    12.750
-   .          .		 .
+   .          .          .
    .	      .		 .
    .	      .		 .
   99,    116238594,    12.000
 ```
+tableID corresponds each table. To convert the ID to table, you can use visualization tool,
+```
+java -jar ID2table.jar
+```
+or, double click ID2table.jar. 
+
+![big_table](https://github.com/gumboshi/pzdr_saidai/blob/master/file/big_table)
+1. change the table size and color
+2. input the tableID
+3. click "set" button 
+![normal_table](https://github.com/gumboshi/pzdr_saidai/blob/master/file/normal_table)
+You can save this image by "save" button to same folder as ID2table.jar.
 
 
 If you specify -ave, 10000 times simulation will execute to evaluate the influence of Orbs which fall from the outside of the table.
 ```
 $ ./pzdr_saidai.exe -ave
 ```
-And also output will be change to following
-
+And also output will be change like following, 
+```
+13-17, line 0, way 0
+rank,tableID      ,power     ,ave power ,min power ,ave combo ,min combo
+   0,     36923626,    12.750,    14.977,     8.125,    10.286,     7
+   1,     36924130,    12.750,    15.045,     8.125,    10.329,     7
+   2,     45312202,    12.750,    14.996,     8.125,    10.288,     7
+   3,     49049346,    12.750,    15.094,    12.750,    10.250,     9
+   4,     49311426,    12.750,    15.022,    12.750,    10.231,     9
+   5,     74074853,    12.750,    12.787,     4.500,     9.490,     6
+   6,     74075112,    12.750,    14.580,     8.938,    10.208,     8
+   7,     74119464,    12.750,    14.530,     8.938,    10.170,     8
+   .          .          .          .          .          .         .
+   .          .          .          .          .          .         .
+   .          .          .          .          .          .         .
+  99,    116238594,    12.000,    14.087,     7.500,    10.160,     7
+```
 
 
 ## Licence
