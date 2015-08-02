@@ -14,8 +14,9 @@
 #define SUBCOLOR Y
 #define NUM_COLORS 2
 
-#define NORMAL_TABLE 0
-#define BIG_TABLE 1
+#define SMALL_TABLE 0
+#define NORMAL_TABLE 1
+#define BIG_TABLE 2
 
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 #define RANKINGLENGTH 100

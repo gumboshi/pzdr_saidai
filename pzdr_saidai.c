@@ -26,9 +26,11 @@ void init_game_table(long long color_table, long long isErase_table);
 void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length);
 void init_bit_count_table(int *bit_count_table);
 void init_reversed_bit_table(int *reversed_bit_table, int width);
+void generate_table_small(long long tableID, long long *color_table);
 void generate_table_normal(long long tableID, long long *color_table);
 void generate_table_big(long long tableID, long long *color_table);
 void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*, int*, int*, int, int), int start, int end, int *bit_count_table, int *reversed_bit_table, int *tableID_half_table, int *tableID_half_prefix, long long *num_patterns, int *num_patterns_half, int width, int hight, int combo_length, int LS, int isStrong, int line, int way, int simulate_ave);
+int one_step_small(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors);
 int one_step_normal(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors);
 int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors);
 float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, int *isLine_combo, int LS, int isStrong, float line, float way);
@@ -76,6 +78,9 @@ int main(int argc, char* argv[]){
         i++;
         way = atoi(argv[i]);
       }
+      else if (strcmp(argv[i], "-small") == 0) {
+	table_size = SMALL_TABLE;
+      }
       else if (strcmp(argv[i], "-normal") == 0) {
 	table_size = NORMAL_TABLE;
       }
@@ -116,31 +121,34 @@ int main(int argc, char* argv[]){
 	i++;
 	long long ID = atoll(argv[i]);
 	ID2table(ID, 6, 5);
-        fprintf(stdout,"please see https://github.com/gumboshi/pzdr_big \n");
+        fprintf(stdout,"please use ID2table.jar (GUI interface)\n");
 	exit(1);
       }
       else if (strcmp(argv[i], "-ID2TB") == 0) {
 	i++;
 	long long ID = atoll(argv[i]);
 	ID2table(ID, 7, 6);
-        fprintf(stdout,"please see https://github.com/gumboshi/pzdr_big \n");
+        fprintf(stdout,"please see ID2table.jar (GUI interface)\n");
 	exit(1);
       }
       else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
         fprintf(stdout,"options\n");
         fprintf(stdout,"-s <arg>    : Start number of main color. (default=0)\n");
         fprintf(stdout,"-e <arg>    : End number of main color. (default=TABLE_SIZE)\n");
-        fprintf(stdout,"-normal     : Simulate with 5*6 table\n");
-        fprintf(stdout,"-big        : Simulate with 6*7 table\n");
-        fprintf(stdout,"-l <arg>    : Number of \"LINE\"s (zokusei kyouka)\n");
-        fprintf(stdout,"-w <arg>    : Number of \"2WAY\"s (2tai kougeki)\n");
+        fprintf(stdout,"-small      : Simulate with 4x5 table\n");
+        fprintf(stdout,"-normal     : Simulate with 5x6 table\n");
+        fprintf(stdout,"-big        : Simulate with 6x7 table\n");
+        fprintf(stdout,"-l <arg>    : Number of \"LINE\"s \n");
+        fprintf(stdout,"-w <arg>    : Number of \"2WAY\"s \n");
         fprintf(stdout,"-strong     : Use Enhanced Orbs. (drop kyouka)\n");
         fprintf(stdout,"-laku, -paru: Simulate with Lakshmi or Parvati leader skill mode. \n");
         fprintf(stdout,"-krishna    : Simulate with krishna leader skill mode. \n");
         fprintf(stdout,"-hero       : Simulate with Helo leader skill mode. \n");
-        fprintf(stdout,"-sonia      : Simulate with Sonia(red) mode. \n");
+        fprintf(stdout,"-sonia      : Simulate with Red Sonia mode. \n");
         fprintf(stdout,"-noLS       : Simulate with fixed leader skill. \n");
         fprintf(stdout,"-ave        : execute 10000 times OCHIKON simulation. \n");
+        fprintf(stdout,"-gpu        : execute by gpu. (To enable gpu mode, type command `make gpu`) \n");
+        fprintf(stdout,"-cpu        : execute by cpu. \n");
         fprintf(stdout,"-ID2TN <arg>: print normal size table equivalent of input ID (long long value) \n");
         fprintf(stdout,"-ID2TB <arg>: print big size table equivalent of input ID (long long value) \n");
         fprintf(stdout,"\n *********** example ************ \n");
@@ -169,6 +177,15 @@ int main(int argc, char* argv[]){
   int (*os)(long long*, int*, int*, int*, int, int);
   int combo_length;
   switch(table_size){
+  case SMALL_TABLE: 
+    width = 5;
+    hight = 4;
+    num_patterns = num_patterns20;
+    num_patterns_half = num_patterns10;
+    gt = generate_table_small;
+    os = one_step_small;
+    combo_length = 7;
+    break;
   case NORMAL_TABLE: 
     width = 6;
     hight = 5;
@@ -304,6 +321,27 @@ void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int 
   }
 }
  
+#define WID 7
+void generate_table_small(long long tableID, long long *color_table){
+
+  long long ID = tableID;
+  long long b0 = ID & 31;
+  long long b1 = (ID >> 5 ) & 31;
+  long long b2 = (ID >> 10) & 31;
+  long long b3 = (ID >> 15) & 31;
+  color_table[0] = (b0 << (WID+1)) | (b1 << (WID*2+1))
+    | (b2 << (WID*3+1)) | (b3 << (WID*4+1));
+  ID = ~ID;
+  b0 = ID & 31;
+  b1 = (ID >> 5 ) & 31;
+  b2 = (ID >> 10) & 31;
+  b3 = (ID >> 15) & 31;
+  color_table[1] = (b0 << (WID+1)) | (b1 << (WID*2+1))
+    | (b2 << (WID*3+1)) | (b3 << (WID*4+1));
+
+}
+#undef WID
+
 #define WID 8
 void generate_table_normal(long long tableID, long long *color_table){
 
@@ -428,23 +466,23 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
 		  for(num_c = 0;num_c < NUM_COLORS;num_c++){
 		    color_table[num_c] = 0;
 		  }
-		  //tableID = 69797560840L;
+		  //tableID = 33554431;
 		  gt(tableID, color_table);
 		  int returned_combo_counter = 0;
 		  do{
-		    /* 		print_table(color_table, width, hight); */
-		    /* 		print_table2(color_table[0], width, hight); */
-		    /* 		print_table2(color_table[1], width, hight); */
+		    /* print_table(color_table, width, hight); */
+		    /* print_table2(color_table[0], width, hight); */
+		    /* print_table2(color_table[1], width, hight); */
 		    combo_counter = returned_combo_counter;
 		    returned_combo_counter = os(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
-		    //printf("combo = %d\n", returned_combo_counter);
+		    /* printf("combo = %d\n", returned_combo_counter); */
 		  }while(returned_combo_counter != combo_counter);
 		  float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
 	      
-		  /* 	      printf("power = %f\n", power); */
-		  /* 	      for(j = 0;j < combo_length;j++) */
-		  /* 	        printf("color_combo = %d, num_d = %d, isL = %d\n", color_combo[j], num_drops_combo[j], isLine_combo[j]); */
-		  /* 	      return; */
+		  	      /* printf("power = %f\n", power); */
+		  	      /* for(j = 0;j < combo_length;j++) */
+		  	      /*   printf("color_combo = %d, num_d = %d, isL = %d\n", color_combo[j], num_drops_combo[j], isLine_combo[j]); */
+		  	      /* return; */
 		  if(max_power[thread_num][rank-1] < power){
 		    for(j = 0;j < rank;j++){
 		      if(max_power[thread_num][j] < power){
@@ -523,6 +561,137 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
   }
 
 }
+
+#define WID 7
+int one_step_small(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
+  // 0 → width
+  // ↓
+  // hight
+  // 000000000
+  // 000000000
+  // 000000000
+  // 000000000
+  // 000000000
+  // 000000010
+  // 000000111
+  // 000000010
+  
+  long long isErase_tables[num_colors];
+  int combo_counter = finish;
+  int num_c;
+  long long tmp, tmp2;
+
+  for(num_c = 0;num_c < num_colors;num_c++){
+    
+    long long color = color_table[num_c];
+    //自身の上下シフト・左右シフトとビット積をとる。その上下・左右が消すべきビット
+    long long n, w, s, e;
+    n = color >> WID;
+    w = color >> 1;
+    s = color << WID;
+    e = color << 1;
+    tmp  = (color & n & s);
+    tmp  = tmp  | (tmp  >> WID) | (tmp  << WID);
+    tmp2 = (color & w & e);
+    tmp2 = tmp2 | (tmp2 >> 1  ) | (tmp2 << 1  );
+    isErase_tables[num_c] = (color & tmp) | (color & tmp2);
+  }
+
+// #if num_colors==2
+/*   if(isErase_tables[0] == isErase_tables[1])  */
+/*     return combo_counter; */
+//   // isErase_table[0~N] == 0, つまりは消えるドロップがないなら以降の処理は必要ない。
+//   // が、しかしおそらくWarp divergenceの関係で、ない方が速い。(少なくともGPUでは) (CPUでもない方が速いことを確認。分岐予測の方が優秀)
+//   // とすれば、isEraseをtableにしてループ分割する必要はないが、おそらく最適化の関係で分割した方が速い。
+// #endif
+
+  for(num_c = 0;num_c < num_colors;num_c++){
+    long long isErase_table = isErase_tables[num_c];
+    color_table[num_c] = color_table[num_c] & (~isErase_table);
+
+    long long p = 1L << (WID+1);
+    while(isErase_table) {
+      while(!(isErase_table & p)){
+	p = p << 1;
+      }
+      
+      tmp = p;
+      color_combo[combo_counter] = num_c;
+      long long tmp_old;
+      do{
+	// ひとかたまりで消えるドロップは必ず隣接しているので、上下左右の隣接bitを探索する。
+	// 消去ドロップの仕様変更のおかげで可能になった
+	tmp_old = tmp;
+	tmp = (tmp | (tmp << 1) | (tmp >> 1) | (tmp << WID) | (tmp >> WID)) & isErase_table;
+      }while(tmp_old != tmp);
+      isErase_table = isErase_table & (~tmp);
+
+      // tmp の立ってるbit数を数えることで、ひとかたまりのドロップ数を数える
+      // いわゆるpopcnt。
+
+//       int b1, b2, b3, b4, b5, b6;
+//       b1 = tmp >> (WID*1+1) & 127;
+//       b2 = tmp >> (WID*2+1) & 127;
+//       b3 = tmp >> (WID*3+1) & 127;
+//       b4 = tmp >> (WID*4+1) & 127;
+//       b5 = tmp >> (WID*5+1) & 127;
+//       b6 = tmp >> (WID*6+1) & 127;
+//       num_drops_combo[combo_counter] = bit_count_table[b1] + bit_count_table[b2] 
+// 	+ bit_count_table[b3] + bit_count_table[b4] + bit_count_table[b5] + bit_count_table[b6];
+      long long bits = tmp;
+      bits = (bits & 0x5555555555555555LU) + ((bits >> 1) & 0x5555555555555555LU);
+      bits = (bits & 0x3333333333333333LU) + ((bits >> 2) & 0x3333333333333333LU);
+      bits = (bits + (bits >> 4)) & 0x0F0F0F0F0F0F0F0FLU;
+      bits = bits + (bits >> 8);
+      bits = bits + (bits >> 16);
+      bits = (bits + (bits >> 32)) & 0x0000007F;
+      num_drops_combo[combo_counter] = bits;
+//       num_drops_combo[combo_counter] = __popcnt(tmp);
+
+      isLine_combo[combo_counter] = ((tmp >> (WID  +1)) & 31) == 31
+	|| ((tmp >> (WID*2+1)) & 31) == 31
+	|| ((tmp >> (WID*3+1)) & 31) == 31
+	|| ((tmp >> (WID*4+1)) & 31) == 31;
+//       bits = tmp;
+//       bits = bits & (bits >> 1);
+//       bits = bits & (bits >> 2);
+//       bits = bits & (bits >> 3);
+//       isLine_combo[combo_counter] = ((bits & 36099303471055872L) != 0);
+      combo_counter++;
+    }
+  }
+
+  if(finish != combo_counter){
+    long long exist_table = color_table[0];
+    for(num_c = 1;num_c < num_colors;num_c++){
+      exist_table = exist_table | color_table[num_c];
+    }
+    
+    long long exist_org;
+    do{
+      exist_org = exist_table;
+      
+      long long exist_u = (exist_table >> WID) | 16642998272L;
+      for(num_c = 0;num_c < num_colors;num_c++){
+	long long color = color_table[num_c];
+	long long color_u = color & exist_u;
+	long long color_d = (color << WID) & (~exist_table) & (~2130303778816L); 
+	color_table[num_c] = color_u | color_d;
+      }
+      exist_table = color_table[0];
+      for(num_c = 1;num_c < num_colors;num_c++){
+	exist_table = exist_table | color_table[num_c];
+      }
+    }while(exist_org != exist_table);
+  }
+//     if(threadIdx.x == 0 && blockIdx.x == 0){
+//      print_table(color_table);
+//      printf("%lld, %lld\n", exist_org, exist_table);
+//     }
+  return combo_counter;
+}
+#undef WID
+
 
 #define WID 8
 int one_step_normal(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
@@ -654,6 +823,7 @@ int one_step_normal(long long *color_table, int *color_combo, int *num_drops_com
   return combo_counter;
 }
 #undef WID
+
 
 #define WID 9
 int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
