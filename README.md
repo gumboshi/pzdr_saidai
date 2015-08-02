@@ -33,6 +33,10 @@ $ git clone https://github.com/gumboshi/pzdr_saidai.git
 $ cd pzdr_saidai
 $ make gpu
 ```
+(Optional) If you know the number of SMX of your GPU, it is better for your system.
+```shell
+$ make gpu NUM_BLOCK=(4 * number of SMX)
+```
 You don't need gpu version,
 ```shell
 $ git clone https://github.com/gumboshi/pzdr_saidai.git
@@ -76,6 +80,10 @@ Now available: -hero, -laku(-paru), -krishna, -sonia
 ```
 $ ./pzdr_saidai.exe -l 9 -w 2
 ```
+
+#### Output 
+
+
 
 
 ## Licence
