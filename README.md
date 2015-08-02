@@ -105,26 +105,9 @@ rank,tableID      ,power
    .	      .		 .
   99,    116238594,    12.000
 ```
-tableID corresponds each table. To convert the ID to table, you can use visualization tool,
-```
-java -jar ID2table.jar
-```
-or, double click ID2table.jar. 
+tableID corresponds each table. To convert the ID to table, see Usage of visualization tool.
 
-![big_table](https://github.com/gumboshi/pzdr_saidai/blob/master/file/big_table.png)
-
-1. change the table size and color
-
-2. input the tableID
-
-3. click "set" button 
-
-![normal_table](https://github.com/gumboshi/pzdr_saidai/blob/master/file/normal_table.png)
-
-You can save this image by "save" button to same folder as ID2table.jar.
-
-
-If you specify -ave, 10000 times simulation will execute to evaluate the influence of Orbs which fall from the outside of the table.
+If you specify -ave, 10000 time simulation will execute to evaluate the influence of Orbs which fall from the outside of the table.
 ```
 $ ./pzdr_saidai.exe -ave
 ```
@@ -145,6 +128,31 @@ rank,tableID      ,power     ,ave power ,min power ,ave combo ,min combo
    .          .          .          .          .          .         .
   99,    116238594,    12.000,    14.087,     7.500,    10.160,     7
 ```
+ave power... average of the 10000 time simulation
+
+min power... minimum ATT of the 10000 time simulation
+
+ave combo... average number of combo of the 10000 time simulation
+
+## Usage of visualization tool
+To convert the ID to table, you can use visualization tool.
+
+```
+java -jar ID2table.jar
+```
+or, double click ID2table.jar. 
+
+![big_table](https://github.com/gumboshi/pzdr_saidai/blob/master/file/big_table.png)
+
+1. change the table size and color
+
+2. input the tableID
+
+3. click "set" button 
+
+![normal_table](https://github.com/gumboshi/pzdr_saidai/blob/master/file/normal_table.png)
+
+You can save this image by "save" button to same folder as ID2table.jar.
 
 
 ## Licence
