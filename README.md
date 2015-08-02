@@ -19,6 +19,25 @@ For 5x6 table, there is really sophisticated online service: http://full-combo.h
 In contrast, this program supports 4x5, 5x6, and 6x7 tables. (It seems that not implemented yet for US version.)
 
 
+## Expected simulation time 
+
+#### Full simulation for 5x6 
+
+GPU(Nvidia K20) < 3 sec.
+
+CPU(6core Xeon) < 30 sec.
+
+CPU(1core Xeon) < 2 min.
+
+#### Full simulation for 6x7 
+
+GPU(Nvidia K20) < 2.5 hour.
+
+CPU(6core Xeon) < 2 day.
+
+CPU(1core Xeon) < 1 week.
+
+
 ## Requirement
 If you want to use GPU version, CUDA toolkits (https://developer.nvidia.com/cuda-downloads) are required.
 
@@ -83,24 +102,6 @@ If you specify -s and -e like following, simulation executes 10-20, 11-19, 12-18
 ```
 $ ./pzdr_saidai.exe -s 10 -e 14 -normal
 ```
-
-## Expected simulation time 
-
-#### Full simulation for 5x6 
-
-GPU(Nvidia K20) < 3 sec.
-
-CPU(6core Xeon) < 30 sec.
-
-CPU(1core Xeon) < 2 min.
-
-#### Full simulation for 6x7 
-
-GPU(Nvidia K20) < 2.5 hour.
-
-CPU(6core Xeon) < 2 day.
-
-CPU(1core Xeon) < 1 week.
 
 
 ## Output 
