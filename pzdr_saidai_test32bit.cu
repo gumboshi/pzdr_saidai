@@ -128,7 +128,7 @@ __device__ inline void generate_table_big(long long tableID, long long *color_ta
     | (b2 << (WID*3+1)) | (b3 << (WID*4+1)) 
     | (b4 << (WID*5+1)) | (b5 << (WID*6+1));
   ID = ~ID;
-  b0 = ID & 127;
+  b0 = ID & 127; //color[0]をひっくり返してフィルタをかける方がいい
   b1 = (ID >> 7 ) & 127;
   b2 = (ID >> 14) & 127;
   b3 = (ID >> 21) & 127;
@@ -139,8 +139,42 @@ __device__ inline void generate_table_big(long long tableID, long long *color_ta
     | (b4 << (WID*5+1)) | (b5 << (WID*6+1));
 
 }
+
 #undef WID
+
+#define WID 8
+__device__ inline void generate_table_big32bit(long long tableID, unsigned int *main_color, unsigned int *sub_color){
+
+  long long b0, b1, b2, b3, b4, b5;
+  long long ID = tableID;
+  b0 = ID & 127;
+  b1 = (ID >> 7 ) & 127;
+  b2 = (ID >> 14) & 127;
+  b3 = (ID >> 21) & 127;
+  b4 = (ID >> 28) & 127;
+  b5 = (ID >> 35) & 127;
+  main_color[0] =  b0 | (b1 << (WID*1))
+    | (b2 << (WID*2)) | (b3 << (WID*3));
+  main_color[1] =  b2 | (b3 << (WID*1)) 
+    | (b4 << (WID*2)) | (b5 << (WID*3));
+  sub_color[0] = ~(main_color[0] | 2155905152);
+  sub_color[1] = ~(main_color[1] | 2155905152);
+//   ID = ~ID;
+//   b0 = ID & 127;
+//   b1 = (ID >> 7 ) & 127;
+//   b2 = (ID >> 14) & 127;
+//   b3 = (ID >> 21) & 127;
+//   b4 = (ID >> 28) & 127;
+//   b5 = (ID >> 35) & 127;
+//   color_table[1] = (b0 << (WID+1)) | (b1 << (WID*2+1))
+//     | (b2 << (WID*3+1)) | (b3 << (WID*4+1)) 
+//     | (b4 << (WID*5+1)) | (b5 << (WID*6+1));
+
+}
 #endif
+
+#endif
+
 
 
 #if NUM_COLORS==2
@@ -547,6 +581,146 @@ __device__ inline int one_step_big(long long *color_table, int *color_combo, int
 }
 #undef WID
 
+#define WID 8
+
+__device__ inline int one_step_big32bit(unsigned int *main_color, unsigned int *sub_color, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish){
+  // 0 → width
+  // ↓
+  // hight
+  // 000000000
+  // 000000000
+  // 000000000
+  // 000000000
+  // 000000000
+  // 000000010
+  // 000000111
+  // 000000010
+  
+  unsigned int u_main_isErase;
+  unsigned int l_main_isErase;
+  unsigned int u_sub_isErase;
+  unsigned int l_sub_isErase;
+  int combo_counter = finish;
+  int num_c;
+  long long tmp, tmp2;
+
+  for(num_c = 0;num_c < NUM_COLORS;num_c++){
+    
+    long long color = color_table[num_c];
+
+    //自身の上下シフト・左右シフトとビット積をとる。その上下・左右が消すべきビット
+    long long n, w, s, e;
+    n = color >> WID;
+    w = color >> 1;
+    s = color << WID;
+    e = color << 1;
+    tmp  = (color & n & s);
+    tmp  = tmp  | (tmp  >> WID) | (tmp  << WID);
+    tmp2 = (color & w & e);
+    tmp2 = tmp2 | (tmp2 >> 1  ) | (tmp2 << 1  );
+    isErase_tables[num_c] = (color & tmp) | (color & tmp2);
+    //isErase_table = (color & tmp) | (color & tmp2);
+
+  }
+
+// #if NUM_COLORS==2
+//   if(isErase_tables[0] == isErase_tables[1]) 
+//     return combo_counter;
+//   // isErase_table[0~N] == 0, つまりは消えるドロップがないなら以降の処理は必要ない。
+//   // が、しかしおそらくWarp divergenceの関係で、ない方が速い。(少なくともGPUでは)
+//   // とすれば、isEraseをtableにしてループ分割する必要はないが、おそらく最適化の関係で分割した方が速い。
+// #endif
+
+  for(num_c = 0;num_c < NUM_COLORS;num_c++){
+    long long isErase_table = isErase_tables[num_c];
+    color_table[num_c] = color_table[num_c] & (~isErase_table);
+
+    long long p = 1L << (WID+1);
+    while(isErase_table) {
+      while(!(isErase_table & p)){
+	p = p << 1;
+      }
+      
+      tmp = p;
+      color_combo[combo_counter] = num_c;
+      long long tmp_old;
+      do{
+	tmp_old = tmp;
+	tmp = (tmp | (tmp << 1) | (tmp >> 1) | (tmp << WID) | (tmp >> WID)) & isErase_table;
+      }while(tmp_old != tmp);
+      isErase_table = isErase_table & (~tmp);
+//       int b1, b2, b3, b4, b5, b6;
+//       b1 = tmp >> (WID*1+1) & 127;
+//       b2 = tmp >> (WID*2+1) & 127;
+//       b3 = tmp >> (WID*3+1) & 127;
+//       b4 = tmp >> (WID*4+1) & 127;
+//       b5 = tmp >> (WID*5+1) & 127;
+//       b6 = tmp >> (WID*6+1) & 127;
+//       num_drops_combo[combo_counter] = bit_count_table[b1] + bit_count_table[b2] 
+// 	+ bit_count_table[b3] + bit_count_table[b4] + bit_count_table[b5] + bit_count_table[b6];
+      long long bits = tmp;
+//       bits = (bits & 0x5555555555555555) + (bits >> 1 & 0x5555555555555555);
+//       bits = (bits & 0x3333333333333333) + (bits >> 2 & 0x3333333333333333);
+//       bits = (bits & 0x0f0f0f0f0f0f0f0f) + (bits >> 4 & 0x0f0f0f0f0f0f0f0f);
+//       bits = (bits & 0x00ff00ff00ff00ff) + (bits >> 8 & 0x00ff00ff00ff00ff);
+//       bits = (bits & 0x0000ffff0000ffff) + (bits >>16 & 0x0000ffff0000ffff);
+//       num_drops_combo[combo_counter] = (bits & 0x00000000ffffffff) + (bits >>32 & 0x00000000ffffffff);
+
+      bits = (bits & 0x5555555555555555LU) + (bits >> 1 & 0x5555555555555555LU);
+      bits = (bits & 0x3333333333333333LU) + (bits >> 2 & 0x3333333333333333LU);
+      bits = bits + (bits >> 4) & 0x0F0F0F0F0F0F0F0FLU;
+      bits = bits + (bits >> 8);
+      bits = bits + (bits >> 16);
+      bits = bits + (bits >> 32) & 0x0000007F;
+      num_drops_combo[combo_counter] = bits;
+
+//       num_drops_combo[combo_counter] = __popcll(tmp);
+
+      isLine_combo[combo_counter] = ((tmp >> (WID  +1)) & 127) == 127
+	|| ((tmp >> (WID*2+1)) & 127) == 127
+	|| ((tmp >> (WID*3+1)) & 127) == 127
+	|| ((tmp >> (WID*4+1)) & 127) == 127
+	|| ((tmp >> (WID*5+1)) & 127) == 127
+	|| ((tmp >> (WID*6+1)) & 127) == 127;
+//       bits = tmp;
+//       bits = bits & (bits >> 1);
+//       bits = bits & (bits >> 2);
+//       bits = bits & (bits >> 3);
+//       isLine_combo[combo_counter] = ((bits & 36099303471055872L) != 0);
+      
+      combo_counter++;
+    }
+  }
+  
+  if(finish != combo_counter){
+    long long exist_table = color_table[0];
+    for(num_c = 1;num_c < NUM_COLORS;num_c++){
+      exist_table = exist_table | color_table[num_c];
+    }
+    
+    long long exist_org;
+    do{
+      exist_org = exist_table;
+      
+      long long exist_u = (exist_table >> WID) | 4575657221408423936L;
+      
+      for(num_c = 0;num_c < NUM_COLORS;num_c++){
+	long long color = color_table[num_c];
+	long long color_u = color & exist_u;
+	long long color_d = (color << WID) & (~exist_table);
+	color_table[num_c] = color_u | color_d;
+      }
+      exist_table = color_table[0];
+      for(num_c = 1;num_c < NUM_COLORS;num_c++){
+	exist_table = exist_table | color_table[num_c];
+      }
+    }while(exist_org != exist_table);
+  }
+
+  return combo_counter;
+}
+#undef WID
+
 #endif
 
 __device__ inline float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, int *isLine_combo, int LS, int strong, float line, float way){
@@ -670,12 +844,6 @@ __global__ void simulate_all_kernel_small(int num_attacks, const int * __restric
   long long MID[LOCALRANKINGLENGTH];
   long long tableID = 0;
 
-  long long color_table[NUM_COLORS];
-  int num_c;
-  for(num_c = 0;num_c < NUM_COLORS;num_c++){
-    color_table[num_c] = 0;
-  }
-
   for(i = 0;i < rank;i++){
     MID[i] = 0;
     MP[i] = 0.0;
@@ -700,8 +868,13 @@ __global__ void simulate_all_kernel_small(int num_attacks, const int * __restric
 	    reversed += ((long long)reversed_bit_table[bit_num[i]]) << (5*i);
 	  }
 	  if(tableID <= reversed){
-	    //init_combo_info(color_combo, num_drops_combo, isLine_combo, COMBO_LENGTH);
+	    init_combo_info(color_combo, num_drops_combo, isLine_combo, COMBO_LENGTH);
 	    int combo_counter = 0;
+	    long long color_table[NUM_COLORS];
+	    int num_c;
+	    for(num_c = 0;num_c < NUM_COLORS;num_c++){
+	      color_table[num_c] = 0;
+	    }
 	    //tableID = 1103874885640L;
 	    //tableID = 42656280L;
 	    generate_table_small(tableID, color_table);
@@ -765,12 +938,6 @@ __global__ void simulate_all_kernel_normal(int num_attacks, const int * __restri
   long long MID[LOCALRANKINGLENGTH];
   long long tableID = 0;
 
-  long long color_table[NUM_COLORS];
-  int num_c;
-  for(num_c = 0;num_c < NUM_COLORS;num_c++){
-    color_table[num_c] = 0;
-  }
-
   for(i = 0;i < rank;i++){
     MID[i] = 0;
     MP[i] = 0.0;
@@ -795,8 +962,13 @@ __global__ void simulate_all_kernel_normal(int num_attacks, const int * __restri
 	    reversed += ((long long)reversed_bit_table[bit_num[i]]) << (6*i);
 	  }
 	  if(tableID <= reversed){
-	    //init_combo_info(color_combo, num_drops_combo, isLine_combo, COMBO_LENGTH);
+	    init_combo_info(color_combo, num_drops_combo, isLine_combo, COMBO_LENGTH);
 	    int combo_counter = 0;
+	    long long color_table[NUM_COLORS];
+	    int num_c;
+	    for(num_c = 0;num_c < NUM_COLORS;num_c++){
+	      color_table[num_c] = 0;
+	    }
 	    //tableID = 1103874885640L;
 	    //tableID = 42656280L;
 	    generate_table_normal(tableID, color_table);
@@ -860,12 +1032,6 @@ __global__ void simulate_all_kernel_big(int num_attacks, const int * __restrict_
   long long MID[LOCALRANKINGLENGTH];
   long long tableID = 0;
 
-//   long long color_table[NUM_COLORS];
-//   int num_c;
-//   for(num_c = 0;num_c < NUM_COLORS;num_c++){
-//     color_table[num_c] = 0;
-//   }
-
   for(i = 0;i < rank;i++){
     MID[i] = 0;
     MP[i] = 0.0;
@@ -886,18 +1052,31 @@ __global__ void simulate_all_kernel_big(int num_attacks, const int * __restrict_
 
 	  long long reversed = 0;
 	  for(i = 0;i < 6; i++){
-	    bit_num[i] = ((tableID >> (7*i) ) & (REVERSE_LENGTH-1));
-	    reversed = reversed | ((long long)reversed_bit_table[bit_num[i]]) << (7*i);
+	    bit_num[i] = (int)((tableID >> (7*i) ) & (REVERSE_LENGTH-1));
+	    reversed += ((long long)reversed_bit_table[bit_num[i]]) << (7*i);
 	  }
 	  if(tableID <= reversed){
-	    //init_combo_info(color_combo, num_drops_combo, isLine_combo, COMBO_LENGTH);
+	    init_combo_info(color_combo, num_drops_combo, isLine_combo, COMBO_LENGTH);
 	    int combo_counter = 0;
 	    long long color_table[NUM_COLORS];
+	    int num_c;
+	    for(num_c = 0;num_c < NUM_COLORS;num_c++){
+	      color_table[num_c] = 0;
+	    }
+	    //tableID = 1103874885640L;
+	    //tableID = 42656280L;
 	    generate_table_big(tableID, color_table);
 	    int returned_combo_counter = 0;
 	    do{
+// 	      if(blockDim.x * blockIdx.x + threadIdx.x == 0){
+// 	        printf("ID %lld\n",tableID);
+// 	        print_table(color_table);
+// 	        print_table2(color_table[0]);
+// 	        print_table2(color_table[1]);
+// 	      }
 	      combo_counter = returned_combo_counter;
 	      returned_combo_counter = one_step_big(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter);
+	      //printf("combo = %d\n", returned_combo_counter);
 	    }while(returned_combo_counter != combo_counter);
 	    float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, strong, line, way);
 	    if(MP[rank-1] < power){
