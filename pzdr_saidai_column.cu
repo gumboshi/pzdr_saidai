@@ -11,7 +11,7 @@
 #define LOCALRANKINGLENGTH 10
 
 #ifndef NUM_BLOCK
-#define NUM_BLOCK 52
+#define NUM_BLOCK 65
 #endif
 #define NUM_THREAD 256
 
@@ -25,16 +25,16 @@
   } while(0)
 
 
-// __device__ inline void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length){
-//   int i;
-//   for(i = 0;i < combo_length;i++){
-//     color_combo[i] = 0;
-//     num_drops_combo[i] = 0;
-//     isLine_combo[i] = 0;
-//   }
-// }
+__device__ inline void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length){
+  int i;
+  for(i = 0;i < combo_length;i++){
+    color_combo[i] = 0;
+    num_drops_combo[i] = 0;
+    isLine_combo[i] = 0;
+  }
+}
 
-__device__ void print_table_dev(unsigned long long *color_table, int width, int hight){
+__device__ void print_table(unsigned long long *color_table, int width, int hight){
 
   int i, j;
   for(i = 1;i <= hight;i++){
@@ -53,7 +53,7 @@ __device__ void print_table_dev(unsigned long long *color_table, int width, int 
 }
 
 
-__device__ void print_table2_dev(unsigned long long color_table, int width, int hight){
+__device__ void print_table2(unsigned long long color_table, int width, int hight){
   int i, j;
   for(i = 1;i <= hight;i++){
     for(j = 1;j <= width;j++){
@@ -68,7 +68,7 @@ __device__ void print_table2_dev(unsigned long long color_table, int width, int 
 
 #if NUM_COLORS==2
 #define WID 7
-__device__ inline void generate_table_small_dev(unsigned long long tableID, unsigned long long *color_table){
+__device__ inline void generate_table_small(unsigned long long tableID, unsigned long long *color_table){
 
   unsigned long long b0, b1, b2, b3;
   unsigned long long ID = tableID;
@@ -90,7 +90,7 @@ __device__ inline void generate_table_small_dev(unsigned long long tableID, unsi
 #undef WID
 
 #define WID 8
-__device__ inline void generate_table_normal_dev(unsigned long long tableID, unsigned long long *color_table){
+__device__ inline void generate_table_normal(unsigned long long tableID, unsigned long long *color_table){
 
   unsigned long long b0, b1, b2, b3, b4;
   unsigned long long ID = tableID;
@@ -114,7 +114,7 @@ __device__ inline void generate_table_normal_dev(unsigned long long tableID, uns
 #undef WID
 
 #define WID 9
-__device__ inline void generate_table_big_dev(unsigned long long tableID, unsigned long long *color_table){
+__device__ inline void generate_table_big(unsigned long long tableID, unsigned long long *color_table){
 
   unsigned long long b0, b1, b2, b3, b4, b5;
   unsigned long long ID = tableID;
@@ -140,13 +140,45 @@ __device__ inline void generate_table_big_dev(unsigned long long tableID, unsign
 
 }
 #undef WID
+
+#define HIG 8
+__device__ inline void generate_table_big_colmun(unsigned long long tableID, unsigned long long *color_table){
+
+  unsigned long long b0, b1, b2, b3, b4, b5, b6;
+  unsigned long long ID = tableID;
+  b0 = (ID      ) & 63;
+  b1 = (ID >> 6 ) & 63;
+  b2 = (ID >> 12) & 63;
+  b3 = (ID >> 18) & 63;
+  b4 = (ID >> 24) & 63;
+  b5 = (ID >> 30) & 63;
+  b6 = (ID >> 36) & 63;
+  color_table[0] = (b0 << 1)
+    | (b1 << (HIG  +1)) | (b2 << (HIG*2+1))
+    | (b3 << (HIG*3+1)) | (b4 << (HIG*4+1))
+    | (b5 << (HIG*5+1)) | (b6 << (HIG*6+1));
+  ID = ~ID;
+  b0 = (ID      ) & 63;
+  b1 = (ID >> 6 ) & 63;
+  b2 = (ID >> 12) & 63;
+  b3 = (ID >> 18) & 63;
+  b4 = (ID >> 24) & 63;
+  b5 = (ID >> 30) & 63;
+  b6 = (ID >> 36) & 63;
+  color_table[1] = (b0 << 1)
+    | (b1 << (HIG  +1)) | (b2 << (HIG*2+1))
+    | (b3 << (HIG*3+1)) | (b4 << (HIG*4+1))
+    | (b5 << (HIG*5+1)) | (b6 << (HIG*6+1));
+
+}
+#undef HIG
 #endif
 
 
 #if NUM_COLORS==2
 
 #define WID 7
-__device__ inline int one_step_small_dev(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish){
+__device__ inline int one_step_small(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish){
   // 0 → width
   // ↓
   // hight
@@ -278,7 +310,7 @@ __device__ inline int one_step_small_dev(unsigned long long *color_table, int *c
 #undef WID
 
 #define WID 8
-__device__ inline int one_step_normal_dev(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish){
+__device__ inline int one_step_normal(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish){
   // 0 → width
   // ↓
   // hight
@@ -412,7 +444,7 @@ __device__ inline int one_step_normal_dev(unsigned long long *color_table, int *
 
 #define WID 9
 
-__device__ inline int one_step_big_dev(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish){
+__device__ inline int one_step_big(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish){
   // 0 → width
   // ↓
   // hight
@@ -549,7 +581,7 @@ __device__ inline int one_step_big_dev(unsigned long long *color_table, int *col
 
 #endif
 
-__device__ inline float return_attack_dev(int combo_counter, int *color_combo, int *num_drops_combo, int *isLine_combo, int LS, int strong, float line, float way){
+__device__ inline float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, int *isLine_combo, int LS, int strong, float line, float way){
   // used for simulation mode
   // [FIXME] check only Green attack
   int num_line = 0;
@@ -704,7 +736,7 @@ __global__ void simulate_all_kernel_small(int num_attacks, const int * __restric
 	    int combo_counter = 0;
 	    //tableID = 1103874885640L;
 	    //tableID = 42656280L;
-	    generate_table_small_dev(tableID, color_table);
+	    generate_table_small(tableID, color_table);
 	    int returned_combo_counter = 0;
 	    do{
 // 	      if(blockDim.x * blockIdx.x + threadIdx.x == 0){
@@ -714,10 +746,10 @@ __global__ void simulate_all_kernel_small(int num_attacks, const int * __restric
 // 	        print_table2(color_table[1]);
 // 	      }
 	      combo_counter = returned_combo_counter;
-	      returned_combo_counter = one_step_small_dev(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter);
+	      returned_combo_counter = one_step_small(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter);
 	      //printf("combo = %d\n", returned_combo_counter);
 	    }while(returned_combo_counter != combo_counter);
-	    float power = return_attack_dev(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, strong, line, way);
+	    float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, strong, line, way);
 	    if(MP[rank-1] < power){
 	      for(j = 0;j < rank;j++){
 		if(MP[j] < power){
@@ -799,7 +831,7 @@ __global__ void simulate_all_kernel_normal(int num_attacks, const int * __restri
 	    int combo_counter = 0;
 	    //tableID = 1103874885640L;
 	    //tableID = 42656280L;
-	    generate_table_normal_dev(tableID, color_table);
+	    generate_table_normal(tableID, color_table);
 	    int returned_combo_counter = 0;
 	    do{
 // 	      if(blockDim.x * blockIdx.x + threadIdx.x == 0){
@@ -809,10 +841,10 @@ __global__ void simulate_all_kernel_normal(int num_attacks, const int * __restri
 // 	        print_table2(color_table[1]);
 // 	      }
 	      combo_counter = returned_combo_counter;
-	      returned_combo_counter = one_step_normal_dev(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter);
+	      returned_combo_counter = one_step_normal(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter);
 	      //printf("combo = %d\n", returned_combo_counter);
 	    }while(returned_combo_counter != combo_counter);
-	    float power = return_attack_dev(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, strong, line, way);
+	    float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, strong, line, way);
 	    if(MP[rank-1] < power){
 	      for(j = 0;j < rank;j++){
 		if(MP[j] < power){
@@ -893,13 +925,13 @@ __global__ void simulate_all_kernel_big(int num_attacks, const int * __restrict_
 	    //init_combo_info(color_combo, num_drops_combo, isLine_combo, COMBO_LENGTH);
 	    int combo_counter = 0;
 	    unsigned long long color_table[NUM_COLORS];
-	    generate_table_big_dev(tableID, color_table);
+	    generate_table_big(tableID, color_table);
 	    int returned_combo_counter = 0;
 	    do{
 	      combo_counter = returned_combo_counter;
-	      returned_combo_counter = one_step_big_dev(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter);
+	      returned_combo_counter = one_step_big(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter);
 	    }while(returned_combo_counter != combo_counter);
-	    float power = return_attack_dev(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, strong, line, way);
+	    float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, strong, line, way);
 	    if(MP[rank-1] < power){
 	      for(j = 0;j < rank;j++){
 		if(MP[j] < power){

@@ -10,9 +10,6 @@
 #endif
 #include "patterns.h"
 #include "pzdr_def.h"
-#ifdef CUDA
-#include "pzdr_cuda.h"
-#endif
 #include "pzdr_saidai.h"
 
 double gettimeofday_sec()
@@ -22,23 +19,6 @@ double gettimeofday_sec()
   return tv.tv_sec + (double)tv.tv_usec*1e-6;
 }
 
-//void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length);
-void init_bit_count_table(int *bit_count_table);
-void init_reversed_bit_table(int *reversed_bit_table, const int width);
-void generate_table_small(const unsigned long long tableID, unsigned long long *color_table);
-void generate_table_normal(const unsigned long long tableID, unsigned long long *color_table);
-void generate_table_big(const unsigned long long tableID, unsigned long long *color_table);
-//void simulate_all(void (*const gt)(long long, long long*), int (*const os)(long long*, int*, int*, int*, int, int), const int start, const int end, int * const bit_count_table, int * const reversed_bit_table, int *const tableID_half_table, int *const tableID_half_prefix, unsigned long long *const num_patterns, int *const num_patterns_half, const int width, const int hight, const int combo_length, const int LS, const int isStrong, const int line, const int way, const int simulate_ave);
-void simulate_all(const int table_size, const int start, const int end, /*int * const bit_count_table, */int * const reversed_bit_table, int *const tableID_half_table, int *const tableID_half_prefix, unsigned long long *const num_patterns, int *const num_patterns_half, const int width, const int hight, const int combo_length, const int LS, const int isStrong, const int line, const int way, const int simulate_ave);
-int one_step_small(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, const int finish, const int num_colors);
-int one_step_normal(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, const int finish, const int num_colors);
-int one_step_big(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, const int finish, const int num_colors);
-float return_attack(const int combo_counter, int *const color_combo, int *const num_drops_combo, int *const isLine_combo, const int LS, const int isStrong, const float line, const float way);
-void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int *const bit_count_table, int *const num_patterns, const int half_table_size);
-void print_table(const unsigned long long *color_table, const int width, const int hight);
-void print_table2(const unsigned long long color_table, const int width, const int hight);
-void ID2table(const unsigned long long color_table, const int width, const int hight);
-void fill_random(unsigned long long *color_table, const int width, const int hight);
 
 int main(int argc, char* argv[]){
 
@@ -233,7 +213,7 @@ int main(int argc, char* argv[]){
   if(useCUDA){
 #ifdef CUDA
     //simulate_all_cuda(gt, os, table_size, start, end, bit_count_table, reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
-    simulate_all_cuda(table_size, start, end, /*bit_count_table, */reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
+    simulate_all_cuda(table_size, start, end, /*bit_count_table, */reversed_bit_table, tableID_half_table, tableID_half_prefix, /*num_patterns,*/ num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
 #endif
   }else{
     //simulate_all(gt, os, start, end, bit_count_table, reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
@@ -394,6 +374,7 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
 
   const float pline = (float)line;
   const float pway = pow(1.5,way);
+  const unsigned long long filter = (1L << (width*hight))-1;
 
   int num_threads = 1;
 #ifdef _OPENMP
@@ -402,9 +383,9 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
 
   unsigned long long tableID = 0;
   //int rank = MIN(RANKINGLENGTH, num_patterns[num_attacks]);
-  int rank = RANKINGLENGTH;
-  unsigned long long max_powerID[num_threads][rank];
-  float max_power[num_threads][rank];
+  const int rank = RANKINGLENGTH;
+  unsigned long long max_powerID[num_threads][2][rank];
+  float max_power[num_threads][2][rank];
   unsigned long long final_MID[42][rank];
   float final_MP[42][rank];
 
@@ -412,30 +393,33 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
   int color_combo[combo_length];
   int num_drops_combo[combo_length];
   int isLine_combo[combo_length];
-  int half_table_size = width*hight/2;
-  int reverse_length = 1 << width;
+  const int half_table_size = width*hight/2;
+  const int reverse_length = 1 << width;
   int num_attacks;
 
   for(num_attacks = start;num_attacks <= end;num_attacks++){
-    printf("%2d-%2d, line %d, way %d\n", num_attacks, width*hight-num_attacks, line, way);
+    printf("calculating %2d-%2d & %2d-%2d ...\n", num_attacks, width*hight-num_attacks, width*hight-num_attacks, num_attacks);
+    if(half_table_size < num_attacks && num_attacks <= width*hight-start) break;
 
-    for(i = 0;i < num_threads;i++){
-      for(j = 0;j < rank;j++){
-	max_powerID[i][j] = 0;
-	max_power[i][j] = 0;
+    if(num_attacks == half_table_size){
+      for(i = 0;i < num_threads;i++){
+	for(j = 0;j < rank;j++){
+	  max_powerID[i][0][j] = 0;
+	  max_power[i][0][j] = 0;
+	  max_powerID[i][1][j] = 0;
+	  max_power[i][1][j] = 0;
+	}
       }
-    }
 
 #pragma omp parallel private(i,j,k,tableID, color_combo, num_drops_combo, isLine_combo)
-    {
-      int thread_num = 0;
+      {
+	int thread_num = 0;
 #ifdef _OPENMP
-      thread_num = omp_get_thread_num();
+	thread_num = omp_get_thread_num();
 #endif
-      int u, l, uu, ll;
-      for(u = 0;u <= num_attacks;u++){
-	l = num_attacks - u;
-	if(u <= half_table_size && l <= half_table_size){
+	int u, l, uu, ll;
+	for(u = 0;u <= num_attacks;u++){
+	  l = num_attacks - u;
 	  int uoffset = tableID_half_prefix[u];
 	  int loffset = tableID_half_prefix[l];
 #pragma omp for 
@@ -450,7 +434,8 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
 		reverse_bit[i] = (tableID >> width*i ) & (reverse_length-1);
 		reversed = reversed | (((long long)reversed_bit_table[reverse_bit[i]]) << width*i);
 	      }
-	      if(tableID <= reversed){
+	      unsigned long long inversed = (~tableID) & filter;
+	      if(tableID <= reversed && tableID <= inversed){
 		//init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
 		int combo_counter = 0;
 		unsigned long long color_table[NUM_COLORS];
@@ -489,83 +474,275 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
 		    break;
 		  }
 		}while(returned_combo_counter != combo_counter);
-		float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
+		//float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
+		float power[2];
+		return_attack_double(power, combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
 		
-		if(max_power[thread_num][rank-1] < power){
+		if(max_power[thread_num][0][rank-1] < power[0]){
 		  for(j = 0;j < rank;j++){
-		    if(max_power[thread_num][j] < power){
+		    if(max_power[thread_num][0][j] < power[0]){
 		      for(k = rank-2;k >= j;k--){
-			max_powerID[thread_num][k+1] = max_powerID[thread_num][k];
-			max_power[thread_num][k+1] = max_power[thread_num][k];
+			max_powerID[thread_num][0][k+1] = max_powerID[thread_num][0][k];
+			max_power[thread_num][0][k+1] = max_power[thread_num][0][k];
 		      }
-		      max_powerID[thread_num][j] = tableID;
-		      max_power[thread_num][j] = power;
+		      max_powerID[thread_num][0][j] = tableID;
+		      max_power[thread_num][0][j] = power[0];
 		      break;
 		    }
 		  }
+		}
+		if(max_power[thread_num][1][rank-1] < power[1]){
+		  for(j = 0;j < rank;j++){
+		    if(max_power[thread_num][1][j] < power[1]){
+		      for(k = rank-2;k >= j;k--){
+			max_powerID[thread_num][1][k+1] = max_powerID[thread_num][1][k];
+			max_power[thread_num][1][k+1] = max_power[thread_num][1][k];
+		      }
+		      max_powerID[thread_num][1][j] = (~tableID) & filter;
+		      max_power[thread_num][1][j] = power[1];
+		      break;
+		    }
+		  }
+		}
+
+	      }
+	    }
+	  }
+	}
+
+      } //omp end
+
+      float MP[rank];
+      unsigned long long MID[rank];
+      int ms;
+      for(i = 0;i < rank;i++){
+	MP[i] = 0.0;
+	MID[i]= 0;
+      }
+      
+      for(i = 0;i < num_threads;i++){
+	for(ms = 0; ms < 2; ms++){
+	  for(j = 0;j < rank;j++){
+	    float power = max_power[i][ms][j];
+	    tableID = max_powerID[i][ms][j];
+	    if(MP[rank-1] < power){
+	      for(k = 0;k < rank;k++){
+		if(MP[k] < power){
+		  for(m = rank-2;m >= k;m--){
+		    MID[m+1] = MID[m];
+		    MP[m+1] = MP[m];
+		  }
+		  MID[k] = tableID;
+		  MP[k] = power;
+		  break;
 		}
 	      }
 	    }
 	  }
 	}
       }
+      for(i = 0;i < rank;i++){
+	float power = MP[i];
+	unsigned long long tmp = MID[i];
+	unsigned long long minID = tmp;
+	int index = i;
+	for(j = i+1;j < rank;j++){
+	  if(power == MP[j]){
+	    if(minID > MID[j]){
+	      minID = MID[j];
+	      index = j;
+	    }
+	  }else{
+	    break;
+	  }
+	}
+	MID[index] = tmp;
+	MID[i] = minID;
+      }
+      for(i = 0;i < rank;i++){
+	final_MID[num_attacks][i] = MID[i];
+	final_MP [num_attacks][i] = MP [i];
+      }
 
-    } //omp end
+    }else{
+      for(i = 0;i < num_threads;i++){
+	for(j = 0;j < rank;j++){
+	  max_powerID[i][0][j] = 0;
+	  max_power[i][0][j] = 0;
+	  max_powerID[i][1][j] = 0;
+	  max_power[i][1][j] = 0;
+	}
+      }
 
-    float MP[rank];
-    unsigned long long MID[rank];
-    for(i = 0;i < rank;i++){
-      MP[i] = 0.0;
-      MID[i]= 0;
-    }
-      
-    for(i = 0;i < num_threads;i++){
-      for(j = 0;j < rank;j++){
-	float power = max_power[i][j];
-	tableID = max_powerID[i][j];
-	if(MP[rank-1] < power){
-	  for(k = 0;k < rank;k++){
-	    if(MP[k] < power){
-	      for(m = rank-2;m >= k;m--){
-		MID[m+1] = MID[m];
-		MP[m+1] = MP[m];
+#pragma omp parallel private(i,j,k,tableID, color_combo, num_drops_combo, isLine_combo)
+      {
+	int thread_num = 0;
+#ifdef _OPENMP
+	thread_num = omp_get_thread_num();
+#endif
+	int u, l, uu, ll;
+	for(u = 0;u <= num_attacks;u++){
+	  l = num_attacks - u;
+	  if(u <= half_table_size && l <= half_table_size){
+	    int uoffset = tableID_half_prefix[u];
+	    int loffset = tableID_half_prefix[l];
+#pragma omp for 
+	    for(uu = 0;uu < num_patterns_half[u];uu++){
+	      for(ll = 0;ll < num_patterns_half[l];ll++){
+		unsigned long long upperID = (long long)tableID_half_table[uu+uoffset];
+		unsigned long long lowerID = (long long)tableID_half_table[ll+loffset];
+		tableID = (upperID << half_table_size) | lowerID;
+		unsigned long long reversed = 0;
+		int reverse_bit[width];
+		for(i = 0;i < hight; i++){
+		  reverse_bit[i] = (tableID >> width*i ) & (reverse_length-1);
+		  reversed = reversed | (((long long)reversed_bit_table[reverse_bit[i]]) << width*i);
+		}
+		if(tableID <= reversed){
+		  //init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
+		  int combo_counter = 0;
+		  unsigned long long color_table[NUM_COLORS];
+		  int num_c;
+		  for(num_c = 0;num_c < NUM_COLORS;num_c++){
+		    color_table[num_c] = 0;
+		  }
+		  switch(table_size){
+		  case SMALL_TABLE:
+		    generate_table_small(tableID, color_table);
+		    break;
+		  case NORMAL_TABLE:
+		    generate_table_normal(tableID, color_table);
+		    break;
+		  case BIG_TABLE:
+		    generate_table_big(tableID, color_table);
+		    break;
+		  default:
+		    fprintf(stderr, "unknown table size\n");
+		    exit(1);
+		  }
+		
+		  int returned_combo_counter = 0;
+		  do{
+		    combo_counter = returned_combo_counter;
+		  
+		    switch(table_size){
+		    case SMALL_TABLE:
+		      returned_combo_counter = one_step_small(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
+		      break;
+		    case NORMAL_TABLE:
+		      returned_combo_counter = one_step_normal(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
+		      break;
+		    case BIG_TABLE:
+		      returned_combo_counter = one_step_big(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
+		      break;
+		    }
+		  }while(returned_combo_counter != combo_counter);
+		  //float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
+		  float power[2];
+		  return_attack_double(power, combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
+		
+		  if(max_power[thread_num][0][rank-1] < power[0]){
+		    for(j = 0;j < rank;j++){
+		      if(max_power[thread_num][0][j] < power[0]){
+			for(k = rank-2;k >= j;k--){
+			  max_powerID[thread_num][0][k+1] = max_powerID[thread_num][0][k];
+			  max_power[thread_num][0][k+1] = max_power[thread_num][0][k];
+			}
+			max_powerID[thread_num][0][j] = tableID;
+			max_power[thread_num][0][j] = power[0];
+			break;
+		      }
+		    }
+		  }
+		  if(max_power[thread_num][1][rank-1] < power[1]){
+		    for(j = 0;j < rank;j++){
+		      if(max_power[thread_num][1][j] < power[1]){
+			for(k = rank-2;k >= j;k--){
+			  max_powerID[thread_num][1][k+1] = max_powerID[thread_num][1][k];
+			  max_power[thread_num][1][k+1] = max_power[thread_num][1][k];
+			}
+			max_powerID[thread_num][1][j] = (~tableID) & filter;
+			max_power[thread_num][1][j] = power[1];
+			break;
+		      }
+		    }
+		  }
+
+		}
 	      }
-	      MID[k] = tableID;
-	      MP[k] = power;
-	      break;
 	    }
 	  }
 	}
-      }
-    }
-    for(i = 0;i < rank;i++){
-      float power = MP[i];
-      unsigned long long tmp = MID[i];
-      unsigned long long minID = tmp;
-      int index = i;
-      for(j = i+1;j < rank;j++){
-	if(power == MP[j]){
-	  if(minID > MID[j]){
-	    minID = MID[j];
-	    index = j;
-	  }
-	}else{
-	  break;
+
+      } //omp end
+
+      float MP[2][rank];
+      unsigned long long MID[2][rank];
+      int ms;
+      for(ms = 0; ms < 2; ms++){
+	for(i = 0;i < rank;i++){
+	  MP[ms][i] = 0.0;
+	  MID[ms][i]= 0;
 	}
-      }
-      MID[index] = tmp;
-      MID[i] = minID;
-    }
-    if(simuave){
-      simulate_average(table_size, MID, MP, num_attacks, width, hight, LS, isStrong, pline, pway);
-	
-    }else{
-      for(i = 0;i < rank;i++){
-	printf("%d,max ID,%lld,power,%f\n",i,MID[i],MP[i]);
+      
+	for(i = 0;i < num_threads;i++){
+	  for(j = 0;j < rank;j++){
+	    float power = max_power[i][ms][j];
+	    tableID = max_powerID[i][ms][j];
+	    if(MP[ms][rank-1] < power){
+	      for(k = 0;k < rank;k++){
+		if(MP[ms][k] < power){
+		  for(m = rank-2;m >= k;m--){
+		    MID[ms][m+1] = MID[ms][m];
+		    MP[ms][m+1] = MP[ms][m];
+		  }
+		  MID[ms][k] = tableID;
+		  MP[ms][k] = power;
+		  break;
+		}
+	      }
+	    }
+	  }
+	}
+	for(i = 0;i < rank;i++){
+	  float power = MP[ms][i];
+	  unsigned long long tmp = MID[ms][i];
+	  unsigned long long minID = tmp;
+	  int index = i;
+	  for(j = i+1;j < rank;j++){
+	    if(power == MP[ms][j]){
+	      if(minID > MID[ms][j]){
+		minID = MID[ms][j];
+		index = j;
+	      }
+	    }else{
+	      break;
+	    }
+	  }
+	  MID[ms][index] = tmp;
+	  MID[ms][i] = minID;
+	}
+	for(i = 0;i < rank;i++){
+	  final_MID[num_attacks][i] = MID[0][i];
+	  final_MP [num_attacks][i] = MP [0][i];
+	  final_MID[width*hight-num_attacks][i] = MID[1][i];
+	  final_MP [width*hight-num_attacks][i] = MP [1][i];
+	}
       }
     }
   }
+  for(num_attacks = start;num_attacks <= end;num_attacks++){
+    printf("%2d-%2d, line %d, way %d\n", num_attacks, width*hight-num_attacks, line, way);
 
+    if(simuave){
+      simulate_average(table_size, final_MID[num_attacks], final_MP[num_attacks], num_attacks, width, hight, LS, isStrong, pline, pway);
+      
+    }else{
+      for(i = 0;i < rank;i++){
+	printf("%d,max ID,%lld,power,%f\n",i,final_MID[num_attacks][i],final_MP[num_attacks][i]);
+      }
+    }
+  }
 }
 
 #define WID 7
@@ -1005,7 +1182,7 @@ void ID2table(const unsigned long long ID, const int width, const int hight){
 }
 
 
-float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, int *isLine_combo, int LS, int strong, float line, float way){
+float return_attack(const int combo_counter, int *const color_combo, int *const num_drops_combo, int *const isLine_combo, const int LS, const int strong, const float line, const float way){
   // used for simulation mode
   // [FIXME] check only Green attack
   const float AT = 1.0;
@@ -1109,7 +1286,149 @@ float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, i
   return attack;
 }
 
-void fill_random(unsigned long long *color_table, int width, int hight){
+
+void return_attack_double(float *power, const int combo_counter, int *const color_combo, int *const num_drops_combo, int *const isLine_combo, const int LS, const int strong, const float line, const float way){
+  // used for simulation mode
+  // [FIXME] check only Green attack
+  const float AT = 1.0;
+  int num_line_m = 0;
+  float attack_m = 0;
+  int num_line_s = 0;
+  float attack_s = 0;
+  float l_m = 1.0;
+  float l_s = 1.0;
+  int i;
+  float drop_pwr;
+  for(i = 0;i < combo_counter;i++){
+    int color = color_combo[i];
+    switch(color){
+    case MAINCOLOR:
+      drop_pwr = num_drops_combo[i]==4 ? (1+0.25*(num_drops_combo[i]-3))*way : 1+0.25*(num_drops_combo[i]-3); 
+      if(strong)
+	drop_pwr = drop_pwr * (1+0.06*num_drops_combo[i]);
+      attack_m += drop_pwr; 
+      if(isLine_combo[i]) num_line_m++;
+      break;
+    case SUBCOLOR:
+      drop_pwr = num_drops_combo[i]==4 ? (1+0.25*(num_drops_combo[i]-3))*way : 1+0.25*(num_drops_combo[i]-3); 
+      if(strong)
+	drop_pwr = drop_pwr * (1+0.06*num_drops_combo[i]);
+      attack_s += drop_pwr; 
+      if(isLine_combo[i]) num_line_s++;
+      break;
+    default:
+      break;
+    }
+  }
+
+  int count_m;
+  int count_s;
+  switch(LS){
+  case HERO: 
+    for(i = 0;i < combo_counter;i++){
+      if(MAINCOLOR == color_combo[i]){
+	int num_drops = num_drops_combo[i];
+	if(num_drops >= 8){
+	  l_m = 16;
+	}else if(num_drops == 7 && l_m < 12.25){
+	  l_m = 12.25;
+	}else if(num_drops == 6 && l_m < 9){
+	  l_m = 9;
+	}
+      }
+      if(SUBCOLOR == color_combo[i]){
+	int num_drops = num_drops_combo[i];
+	if(num_drops >= 8){
+	  l_s = 16;
+	}else if(num_drops == 7 && l_s < 12.25){
+	  l_s = 12.25;
+	}else if(num_drops == 6 && l_s < 9){
+	  l_s = 9;
+	}
+      }
+    }
+    break;
+  case SONIA:
+    if(combo_counter < 6){
+      l_m = 6.25;
+      l_s = 6.25;
+    }else{
+      l_m = 2.75*2.75;
+      l_s = 2.75*2.75;
+    }
+    break;
+  case KRISHNA:
+    count_m = 0;
+    for(i = 0;i < combo_counter;i++){
+      if(MAINCOLOR == color_combo[i]){
+	count_m++;
+	int num_drops = num_drops_combo[i];
+	if(num_drops == 5)
+	  l_m = 2.25;
+      }
+    }
+    if(count_m == 2)
+      l_m = l_m * 3 * 3;
+    else if(count_m >= 3)
+      l_m = l_m * 4.5 * 4.5;
+    else
+      l_m = 1;
+    count_s = 0;
+    for(i = 0;i < combo_counter;i++){
+      if(SUBCOLOR == color_combo[i]){
+	count_s++;
+	int num_drops = num_drops_combo[i];
+	if(num_drops == 5)
+	  l_s = 2.25;
+      }
+    }
+    if(count_s == 2)
+      l_s = l_s * 3 * 3;
+    else if(count_s >= 3)
+      l_s = l_s * 4.5 * 4.5;
+    else
+      l_s = 1;
+    break;
+  case BASTET:
+    if(combo_counter == 5){
+      l_m = 3.0*3.0;
+      l_s = 3.0*3.0;
+    }else if(combo_counter == 6){
+      l_m = 3.5*3.5;
+      l_s = 3.5*3.5;
+    }else if(combo_counter >= 7){
+      l_m = 4.0*4.0;
+      l_s = 4.0*4.0;
+    }else{
+      l_m = 1.0;
+      l_s = 1.0;
+    }
+    break;
+  case LAKU_PARU:
+    l_m = 6.25;
+    l_s = 6.25;
+    for(i = 0;i < combo_counter;i++){
+      if(SUBCOLOR == color_combo[i]){
+	int num_drops = num_drops_combo[i];
+	if(num_drops >= 5)
+	  l_m = 25;
+      }
+      if(MAINCOLOR == color_combo[i]){
+	int num_drops = num_drops_combo[i];
+	if(num_drops >= 5)
+	  l_s = 25;
+      }
+    }
+    break;
+  default:
+    break;
+  }
+    
+  power[0] = attack_m * (1+0.25*(combo_counter-1)) * AT * l_m * (1+0.1*line*num_line_m);
+  power[1] = attack_s * (1+0.25*(combo_counter-1)) * AT * l_s * (1+0.1*line*num_line_m);
+}
+
+void fill_random(unsigned long long *color_table, const int width, const int hight){
   int i, j, k;
   for(i = 1;i <= hight;i++){
     for(j = 1;j <= width;j++){
