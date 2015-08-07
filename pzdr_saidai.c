@@ -22,23 +22,23 @@ double gettimeofday_sec()
   return tv.tv_sec + (double)tv.tv_usec*1e-6;
 }
 
-void init_game_table(long long color_table, long long isErase_table);
-void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length);
+//void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length);
 void init_bit_count_table(int *bit_count_table);
-void init_reversed_bit_table(int *reversed_bit_table, int width);
-void generate_table_small(long long tableID, long long *color_table);
-void generate_table_normal(long long tableID, long long *color_table);
-void generate_table_big(long long tableID, long long *color_table);
-void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*, int*, int*, int, int), int start, int end, int *bit_count_table, int *reversed_bit_table, int *tableID_half_table, int *tableID_half_prefix, long long *num_patterns, int *num_patterns_half, int width, int hight, int combo_length, int LS, int isStrong, int line, int way, int simulate_ave);
-int one_step_small(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors);
-int one_step_normal(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors);
-int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors);
-float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, int *isLine_combo, int LS, int isStrong, float line, float way);
-void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int *bit_count_table, int *num_patterns, int half_table_size);
-void print_table(long long *color_table, int width, int hight);
-void print_table2(long long color_table, int width, int hight);
-void ID2table(long long color_table, int width, int hight);
-void fill_random(long long *color_table, int width, int hight);
+void init_reversed_bit_table(int *reversed_bit_table, const int width);
+void generate_table_small(const unsigned long long tableID, unsigned long long *color_table);
+void generate_table_normal(const unsigned long long tableID, unsigned long long *color_table);
+void generate_table_big(const unsigned long long tableID, unsigned long long *color_table);
+//void simulate_all(void (*const gt)(long long, long long*), int (*const os)(long long*, int*, int*, int*, int, int), const int start, const int end, int * const bit_count_table, int * const reversed_bit_table, int *const tableID_half_table, int *const tableID_half_prefix, unsigned long long *const num_patterns, int *const num_patterns_half, const int width, const int hight, const int combo_length, const int LS, const int isStrong, const int line, const int way, const int simulate_ave);
+void simulate_all(const int table_size, const int start, const int end, /*int * const bit_count_table, */int * const reversed_bit_table, int *const tableID_half_table, int *const tableID_half_prefix, unsigned long long *const num_patterns, int *const num_patterns_half, const int width, const int hight, const int combo_length, const int LS, const int isStrong, const int line, const int way, const int simulate_ave);
+int one_step_small(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, const int finish, const int num_colors);
+int one_step_normal(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, const int finish, const int num_colors);
+int one_step_big(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, const int finish, const int num_colors);
+float return_attack(const int combo_counter, int *const color_combo, int *const num_drops_combo, int *const isLine_combo, const int LS, const int isStrong, const float line, const float way);
+void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int *const bit_count_table, int *const num_patterns, const int half_table_size);
+void print_table(const unsigned long long *color_table, const int width, const int hight);
+void print_table2(const unsigned long long color_table, const int width, const int hight);
+void ID2table(const unsigned long long color_table, const int width, const int hight);
+void fill_random(unsigned long long *color_table, const int width, const int hight);
 
 int main(int argc, char* argv[]){
 
@@ -119,14 +119,14 @@ int main(int argc, char* argv[]){
 #endif
       else if (strcmp(argv[i], "-ID2TN") == 0) {
 	i++;
-	long long ID = atoll(argv[i]);
+	unsigned long long ID = atoll(argv[i]);
 	ID2table(ID, 6, 5);
         fprintf(stdout,"please use ID2table.jar (GUI interface)\n");
 	exit(1);
       }
       else if (strcmp(argv[i], "-ID2TB") == 0) {
 	i++;
-	long long ID = atoll(argv[i]);
+	unsigned long long ID = atoll(argv[i]);
 	ID2table(ID, 7, 6);
         fprintf(stdout,"please see ID2table.jar (GUI interface)\n");
 	exit(1);
@@ -149,8 +149,8 @@ int main(int argc, char* argv[]){
         fprintf(stdout,"-ave        : execute 10000 times OCHIKON simulation. \n");
         fprintf(stdout,"-gpu        : execute by gpu. (To enable gpu mode, type command `make gpu`) \n");
         fprintf(stdout,"-cpu        : execute by cpu. \n");
-        fprintf(stdout,"-ID2TN <arg>: print normal size table equivalent of input ID (long long value) \n");
-        fprintf(stdout,"-ID2TB <arg>: print big size table equivalent of input ID (long long value) \n");
+        fprintf(stdout,"-ID2TN <arg>: print normal size table equivalent of input ID (unsigned long long value) \n");
+        fprintf(stdout,"-ID2TB <arg>: print big size table equivalent of input ID (unsigned long long value) \n");
         fprintf(stdout,"\n *********** example ************ \n");
         fprintf(stdout,"(1): to simulate 13-17 ~ 18-12, \n");
         fprintf(stdout,"$(exefile) -normal -s 13 -e 18\n\n");
@@ -171,10 +171,10 @@ int main(int argc, char* argv[]){
     }
   }
   
-  long long *num_patterns;
+  unsigned long long *num_patterns;
   int *num_patterns_half;
-  void (*gt)(long long, long long*);
-  int (*os)(long long*, int*, int*, int*, int, int);
+/*   void (*gt)(long long, long long*); */
+/*   int (*os)(long long*, int*, int*, int*, int, int); */
   int combo_length;
   switch(table_size){
   case SMALL_TABLE: 
@@ -182,8 +182,8 @@ int main(int argc, char* argv[]){
     hight = 4;
     num_patterns = num_patterns20;
     num_patterns_half = num_patterns10;
-    gt = generate_table_small;
-    os = one_step_small;
+/*     gt = generate_table_small; */
+/*     os = one_step_small; */
     combo_length = 7;
     break;
   case NORMAL_TABLE: 
@@ -191,8 +191,8 @@ int main(int argc, char* argv[]){
     hight = 5;
     num_patterns = num_patterns30;
     num_patterns_half = num_patterns15;
-    gt = generate_table_normal;
-    os = one_step_normal;
+/*     gt = generate_table_normal; */
+/*     os = one_step_normal; */
     combo_length = 10;
     break;
   case BIG_TABLE: 
@@ -200,8 +200,8 @@ int main(int argc, char* argv[]){
     hight = 6;
     num_patterns = num_patterns42;
     num_patterns_half = num_patterns21;
-    gt = generate_table_big;
-    os = one_step_big;
+/*     gt = generate_table_big; */
+/*     os = one_step_big; */
     combo_length = 14;
     break;
   default:
@@ -230,18 +230,14 @@ int main(int argc, char* argv[]){
   init_bit_count_table(bit_count_table);
   create_half_tableID(tableID_half_table, tableID_half_prefix, bit_count_table, num_patterns_half, half_size);
 
-  int num_attacks;
-  
-  /* for(num_attacks = start;num_attacks <= end;num_attacks++){ */
-  /*   printf("%2d-%2d, line %d, way %d\n", num_attacks, width*hight-num_attacks, line, way); */
-  /*   simulate_all(gt, os, num_attacks, bit_count_table, reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, pline, pway); */
-  /* } */
   if(useCUDA){
 #ifdef CUDA
-    simulate_all_cuda(gt, os, table_size, start, end, bit_count_table, reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
+    //simulate_all_cuda(gt, os, table_size, start, end, bit_count_table, reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
+    simulate_all_cuda(table_size, start, end, /*bit_count_table, */reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
 #endif
   }else{
-    simulate_all(gt, os, start, end, bit_count_table, reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
+    //simulate_all(gt, os, start, end, bit_count_table, reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
+    simulate_all(table_size, start, end, /*bit_count_table, */reversed_bit_table, tableID_half_table, tableID_half_prefix, num_patterns, num_patterns_half, width, hight, combo_length, LS, isStrong, line, way, simuave);
   }
 
   free(tableID_half_table);
@@ -251,14 +247,14 @@ int main(int argc, char* argv[]){
 
 }
 
-void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length){
-  int i;
-  for(i = 0;i < combo_length;i++){
-    color_combo[i] = 0;
-    num_drops_combo[i] = 0;
-    isLine_combo[i] = 0;
-  }
-}
+/* void init_combo_info(int *color_combo, int *num_drops_combo, int *isLine_combo, int combo_length){ */
+/*   int i; */
+/*   for(i = 0;i < combo_length;i++){ */
+/*     color_combo[i] = 0; */
+/*     num_drops_combo[i] = 0; */
+/*     isLine_combo[i] = 0; */
+/*   } */
+/* } */
 
 void init_bit_count_table(int *bit_count_table){
   int i, j;
@@ -274,7 +270,7 @@ void init_bit_count_table(int *bit_count_table){
   }
 }
 
-void init_reversed_bit_table(int *reversed_bit_table, int width){
+void init_reversed_bit_table(int *reversed_bit_table, const int width){
   int i, j;
 
   for(i = 0;i < (1 << width);i++){
@@ -291,7 +287,7 @@ void init_reversed_bit_table(int *reversed_bit_table, int width){
 }
 
 
-void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int *bit_count_table, int *num_patterns, int half_table_size){
+void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int * const bit_count_table, int * const num_patterns, const int half_table_size){
 
   int num_attacks;
   int max_tableID = 1 << half_table_size;
@@ -322,13 +318,13 @@ void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int 
 }
  
 #define WID 7
-void generate_table_small(long long tableID, long long *color_table){
+void generate_table_small(unsigned long long tableID, unsigned long long *color_table){
 
-  long long ID = tableID;
-  long long b0 = ID & 31;
-  long long b1 = (ID >> 5 ) & 31;
-  long long b2 = (ID >> 10) & 31;
-  long long b3 = (ID >> 15) & 31;
+  unsigned long long ID = tableID;
+  unsigned long long b0 = ID & 31;
+  unsigned long long b1 = (ID >> 5 ) & 31;
+  unsigned long long b2 = (ID >> 10) & 31;
+  unsigned long long b3 = (ID >> 15) & 31;
   color_table[0] = (b0 << (WID+1)) | (b1 << (WID*2+1))
     | (b2 << (WID*3+1)) | (b3 << (WID*4+1));
   ID = ~ID;
@@ -343,14 +339,14 @@ void generate_table_small(long long tableID, long long *color_table){
 #undef WID
 
 #define WID 8
-void generate_table_normal(long long tableID, long long *color_table){
+void generate_table_normal(unsigned long long tableID, unsigned long long *color_table){
 
-  long long ID = tableID;
-  long long b0 = ID & 63;
-  long long b1 = (ID >> 6 ) & 63;
-  long long b2 = (ID >> 12) & 63;
-  long long b3 = (ID >> 18) & 63;
-  long long b4 = (ID >> 24) & 63;
+  unsigned long long ID = tableID;
+  unsigned long long b0 = ID & 63;
+  unsigned long long b1 = (ID >> 6 ) & 63;
+  unsigned long long b2 = (ID >> 12) & 63;
+  unsigned long long b3 = (ID >> 18) & 63;
+  unsigned long long b4 = (ID >> 24) & 63;
   color_table[0] = (b0 << (WID+1)) | (b1 << (WID*2+1))
     | (b2 << (WID*3+1)) | (b3 << (WID*4+1)) | (b4 << (WID*5+1));
   ID = ~ID;
@@ -366,10 +362,10 @@ void generate_table_normal(long long tableID, long long *color_table){
 #undef WID
 
 #define WID 9
-void generate_table_big(long long tableID, long long *color_table){
+void generate_table_big(unsigned long long tableID, unsigned long long *color_table){
    
-  long long b0, b1, b2, b3, b4, b5;
-  long long ID = tableID;
+  unsigned long long b0, b1, b2, b3, b4, b5;
+  unsigned long long ID = tableID;
   b0 = ID & 127;
   b1 = (ID >> 7 ) & 127;
   b2 = (ID >> 14) & 127;
@@ -394,18 +390,24 @@ void generate_table_big(long long tableID, long long *color_table){
 #undef WID
 
 
-void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*, int*, int*, int, int), int start, int end, int *bit_count_table, int *reversed_bit_table, int *tableID_half_table, int *tableID_half_prefix, long long *num_patterns, int *num_patterns_half, int width, int hight, int combo_length, int LS, int isStrong, int line, int way, int simuave){
+void simulate_all(const int table_size, const int start, const int end, /*int * const bit_count_table,*/ int * const reversed_bit_table, int * const tableID_half_table, int * const tableID_half_prefix, unsigned long long * const num_patterns, int * const num_patterns_half, const int width, const int hight, const int combo_length, const int LS, const int isStrong, const int line, const int way, const int simuave){
+
+  const float pline = (float)line;
+  const float pway = pow(1.5,way);
 
   int num_threads = 1;
 #ifdef _OPENMP
   num_threads = omp_get_max_threads();
 #endif
 
-  long long tableID = 0;
+  unsigned long long tableID = 0;
   //int rank = MIN(RANKINGLENGTH, num_patterns[num_attacks]);
   int rank = RANKINGLENGTH;
-  long long max_powerID[num_threads][rank];
+  unsigned long long max_powerID[num_threads][rank];
   float max_power[num_threads][rank];
+  unsigned long long final_MID[42][rank];
+  float final_MP[42][rank];
+
   int i, j, k, m;
   int color_combo[combo_length];
   int num_drops_combo[combo_length];
@@ -413,8 +415,6 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
   int half_table_size = width*hight/2;
   int reverse_length = 1 << width;
   int num_attacks;
-  float pline = (float)line;
-  float pway = pow(1.5,way);
 
   for(num_attacks = start;num_attacks <= end;num_attacks++){
     printf("%2d-%2d, line %d, way %d\n", num_attacks, width*hight-num_attacks, line, way);
@@ -433,8 +433,6 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
       thread_num = omp_get_thread_num();
 #endif
       int u, l, uu, ll;
-      int compared_num[(width*hight-1)/8+1];
-      int bit_num[hight];
       for(u = 0;u <= num_attacks;u++){
 	l = num_attacks - u;
 	if(u <= half_table_size && l <= half_table_size){
@@ -443,57 +441,66 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
 #pragma omp for 
 	  for(uu = 0;uu < num_patterns_half[u];uu++){
 	    for(ll = 0;ll < num_patterns_half[l];ll++){
-	      long long upperID = (long long)tableID_half_table[uu+uoffset];
-	      long long lowerID = (long long)tableID_half_table[ll+loffset];
+	      unsigned long long upperID = (long long)tableID_half_table[uu+uoffset];
+	      unsigned long long lowerID = (long long)tableID_half_table[ll+loffset];
 	      tableID = (upperID << half_table_size) | lowerID;
-
-	      int count = 0;
-	      for(i = 0;i < (width*hight-1)/8+1;i++){
-		compared_num[i] = (tableID >> 8*i ) & 255;
-		count += bit_count_table[compared_num[i]];
+	      unsigned long long reversed = 0;
+	      int reverse_bit[width];
+	      for(i = 0;i < hight; i++){
+		reverse_bit[i] = (tableID >> width*i ) & (reverse_length-1);
+		reversed = reversed | (((long long)reversed_bit_table[reverse_bit[i]]) << width*i);
 	      }
-	      if(count == num_attacks){
-		long long reversed = 0;
-		for(i = 0;i < hight; i++){
-		  bit_num[i] = (tableID >> width*i ) & (reverse_length-1);
-		  reversed += ((long long)reversed_bit_table[bit_num[i]]) << width*i;
+	      if(tableID <= reversed){
+		//init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
+		int combo_counter = 0;
+		unsigned long long color_table[NUM_COLORS];
+		int num_c;
+		for(num_c = 0;num_c < NUM_COLORS;num_c++){
+		  color_table[num_c] = 0;
 		}
-		if(tableID <= reversed){
-		  init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
-		  int combo_counter = 0;
-		  long long color_table[NUM_COLORS];
-		  int num_c;
-		  for(num_c = 0;num_c < NUM_COLORS;num_c++){
-		    color_table[num_c] = 0;
+		switch(table_size){
+		case SMALL_TABLE:
+		  generate_table_small(tableID, color_table);
+		  break;
+		case NORMAL_TABLE:
+		  generate_table_normal(tableID, color_table);
+		  break;
+		case BIG_TABLE:
+		  generate_table_big(tableID, color_table);
+		  break;
+		default:
+		  fprintf(stderr, "unknown table size\n");
+		  exit(1);
+		}
+		
+		int returned_combo_counter = 0;
+		do{
+		  combo_counter = returned_combo_counter;
+		  
+		  switch(table_size){
+		  case SMALL_TABLE:
+		    returned_combo_counter = one_step_small(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
+		    break;
+		  case NORMAL_TABLE:
+		    returned_combo_counter = one_step_normal(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
+		    break;
+		  case BIG_TABLE:
+		    returned_combo_counter = one_step_big(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
+		    break;
 		  }
-		  //tableID = 33554431;
-		  gt(tableID, color_table);
-		  int returned_combo_counter = 0;
-		  do{
-		    /* print_table(color_table, width, hight); */
-		    /* print_table2(color_table[0], width, hight); */
-		    /* print_table2(color_table[1], width, hight); */
-		    combo_counter = returned_combo_counter;
-		    returned_combo_counter = os(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, NUM_COLORS);
-		    /* printf("combo = %d\n", returned_combo_counter); */
-		  }while(returned_combo_counter != combo_counter);
-		  float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
-	      
-		  	      /* printf("power = %f\n", power); */
-		  	      /* for(j = 0;j < combo_length;j++) */
-		  	      /*   printf("color_combo = %d, num_d = %d, isL = %d\n", color_combo[j], num_drops_combo[j], isLine_combo[j]); */
-		  	      /* return; */
-		  if(max_power[thread_num][rank-1] < power){
-		    for(j = 0;j < rank;j++){
-		      if(max_power[thread_num][j] < power){
-			for(k = rank-2;k >= j;k--){
-			  max_powerID[thread_num][k+1] = max_powerID[thread_num][k];
-			  max_power[thread_num][k+1] = max_power[thread_num][k];
-			}
-			max_powerID[thread_num][j] = tableID;
-			max_power[thread_num][j] = power;
-			break;
+		}while(returned_combo_counter != combo_counter);
+		float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, pline, pway);
+		
+		if(max_power[thread_num][rank-1] < power){
+		  for(j = 0;j < rank;j++){
+		    if(max_power[thread_num][j] < power){
+		      for(k = rank-2;k >= j;k--){
+			max_powerID[thread_num][k+1] = max_powerID[thread_num][k];
+			max_power[thread_num][k+1] = max_power[thread_num][k];
 		      }
+		      max_powerID[thread_num][j] = tableID;
+		      max_power[thread_num][j] = power;
+		      break;
 		    }
 		  }
 		}
@@ -505,8 +512,8 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
 
     } //omp end
 
-    float     MP [rank];
-    long long MID[rank];
+    float MP[rank];
+    unsigned long long MID[rank];
     for(i = 0;i < rank;i++){
       MP[i] = 0.0;
       MID[i]= 0;
@@ -516,7 +523,6 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
       for(j = 0;j < rank;j++){
 	float power = max_power[i][j];
 	tableID = max_powerID[i][j];
-	//printf("ID %15lld, power %f\n",tableID, power);
 	if(MP[rank-1] < power){
 	  for(k = 0;k < rank;k++){
 	    if(MP[k] < power){
@@ -534,8 +540,8 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
     }
     for(i = 0;i < rank;i++){
       float power = MP[i];
-      long long tmp = MID[i];
-      long long minID = tmp;
+      unsigned long long tmp = MID[i];
+      unsigned long long minID = tmp;
       int index = i;
       for(j = i+1;j < rank;j++){
 	if(power == MP[j]){
@@ -551,7 +557,7 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
       MID[i] = minID;
     }
     if(simuave){
-      simulate_average(gt,os, MID, MP, num_attacks, width, hight, LS, isStrong, pline, pway);
+      simulate_average(table_size, MID, MP, num_attacks, width, hight, LS, isStrong, pline, pway);
 	
     }else{
       for(i = 0;i < rank;i++){
@@ -563,7 +569,7 @@ void simulate_all(void (*gt)(long long, long long*), int (*os)(long long*, int*,
 }
 
 #define WID 7
-int one_step_small(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
+int one_step_small(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
   // 0 → width
   // ↓
   // hight
@@ -576,16 +582,16 @@ int one_step_small(long long *color_table, int *color_combo, int *num_drops_comb
   // 000000111
   // 000000010
   
-  long long isErase_tables[num_colors];
+  unsigned long long isErase_tables[num_colors];
   int combo_counter = finish;
   int num_c;
-  long long tmp, tmp2;
+  unsigned long long tmp, tmp2;
 
   for(num_c = 0;num_c < num_colors;num_c++){
     
-    long long color = color_table[num_c];
+    unsigned long long color = color_table[num_c];
     //自身の上下シフト・左右シフトとビット積をとる。その上下・左右が消すべきビット
-    long long n, w, s, e;
+    unsigned long long n, w, s, e;
     n = color >> WID;
     w = color >> 1;
     s = color << WID;
@@ -606,10 +612,10 @@ int one_step_small(long long *color_table, int *color_combo, int *num_drops_comb
 // #endif
 
   for(num_c = 0;num_c < num_colors;num_c++){
-    long long isErase_table = isErase_tables[num_c];
+    unsigned long long isErase_table = isErase_tables[num_c];
     color_table[num_c] = color_table[num_c] & (~isErase_table);
 
-    long long p = 1L << (WID+1);
+    unsigned long long p = 1L << (WID+1);
     while(isErase_table) {
       while(!(isErase_table & p)){
 	p = p << 1;
@@ -617,7 +623,7 @@ int one_step_small(long long *color_table, int *color_combo, int *num_drops_comb
       
       tmp = p;
       color_combo[combo_counter] = num_c;
-      long long tmp_old;
+      unsigned long long tmp_old;
       do{
 	// ひとかたまりで消えるドロップは必ず隣接しているので、上下左右の隣接bitを探索する。
 	// 消去ドロップの仕様変更のおかげで可能になった
@@ -638,7 +644,7 @@ int one_step_small(long long *color_table, int *color_combo, int *num_drops_comb
 //       b6 = tmp >> (WID*6+1) & 127;
 //       num_drops_combo[combo_counter] = bit_count_table[b1] + bit_count_table[b2] 
 // 	+ bit_count_table[b3] + bit_count_table[b4] + bit_count_table[b5] + bit_count_table[b6];
-      long long bits = tmp;
+      unsigned long long bits = tmp;
       bits = (bits & 0x5555555555555555LU) + ((bits >> 1) & 0x5555555555555555LU);
       bits = (bits & 0x3333333333333333LU) + ((bits >> 2) & 0x3333333333333333LU);
       bits = (bits + (bits >> 4)) & 0x0F0F0F0F0F0F0F0FLU;
@@ -662,20 +668,20 @@ int one_step_small(long long *color_table, int *color_combo, int *num_drops_comb
   }
 
   if(finish != combo_counter){
-    long long exist_table = color_table[0];
+    unsigned long long exist_table = color_table[0];
     for(num_c = 1;num_c < num_colors;num_c++){
       exist_table = exist_table | color_table[num_c];
     }
     
-    long long exist_org;
+    unsigned long long exist_org;
     do{
       exist_org = exist_table;
       
-      long long exist_u = (exist_table >> WID) | 16642998272L;
+      unsigned long long exist_u = (exist_table >> WID) | 16642998272L;
       for(num_c = 0;num_c < num_colors;num_c++){
-	long long color = color_table[num_c];
-	long long color_u = color & exist_u;
-	long long color_d = (color << WID) & (~exist_table) & (~2130303778816L); 
+	unsigned long long color = color_table[num_c];
+	unsigned long long color_u = color & exist_u;
+	unsigned long long color_d = (color << WID) & (~exist_table) & (~2130303778816L); 
 	color_table[num_c] = color_u | color_d;
       }
       exist_table = color_table[0];
@@ -694,7 +700,7 @@ int one_step_small(long long *color_table, int *color_combo, int *num_drops_comb
 
 
 #define WID 8
-int one_step_normal(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
+int one_step_normal(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
   // 0 → width
   // ↓
   // hight
@@ -707,16 +713,16 @@ int one_step_normal(long long *color_table, int *color_combo, int *num_drops_com
   // 000000111
   // 000000010
   
-  long long isErase_tables[num_colors];
+  unsigned long long isErase_tables[num_colors];
   int combo_counter = finish;
   int num_c;
-  long long tmp, tmp2;
+  unsigned long long tmp, tmp2;
 
   for(num_c = 0;num_c < num_colors;num_c++){
     
-    long long color = color_table[num_c];
+    unsigned long long color = color_table[num_c];
     //自身の上下シフト・左右シフトとビット積をとる。その上下・左右が消すべきビット
-    long long n, w, s, e;
+    unsigned long long n, w, s, e;
     n = color >> WID;
     w = color >> 1;
     s = color << WID;
@@ -737,10 +743,10 @@ int one_step_normal(long long *color_table, int *color_combo, int *num_drops_com
 // #endif
 
   for(num_c = 0;num_c < num_colors;num_c++){
-    long long isErase_table = isErase_tables[num_c];
+    unsigned long long isErase_table = isErase_tables[num_c];
     color_table[num_c] = color_table[num_c] & (~isErase_table);
 
-    long long p = 1L << (WID+1);
+    unsigned long long p = 1L << (WID+1);
     while(isErase_table) {
       while(!(isErase_table & p)){
 	p = p << 1;
@@ -748,7 +754,7 @@ int one_step_normal(long long *color_table, int *color_combo, int *num_drops_com
       
       tmp = p;
       color_combo[combo_counter] = num_c;
-      long long tmp_old;
+      unsigned long long tmp_old;
       do{
 	// ひとかたまりで消えるドロップは必ず隣接しているので、上下左右の隣接bitを探索する。
 	// 消去ドロップの仕様変更のおかげで可能になった
@@ -769,7 +775,7 @@ int one_step_normal(long long *color_table, int *color_combo, int *num_drops_com
 //       b6 = tmp >> (WID*6+1) & 127;
 //       num_drops_combo[combo_counter] = bit_count_table[b1] + bit_count_table[b2] 
 // 	+ bit_count_table[b3] + bit_count_table[b4] + bit_count_table[b5] + bit_count_table[b6];
-      long long bits = tmp;
+      unsigned long long bits = tmp;
       bits = (bits & 0x5555555555555555LU) + ((bits >> 1) & 0x5555555555555555LU);
       bits = (bits & 0x3333333333333333LU) + ((bits >> 2) & 0x3333333333333333LU);
       bits = (bits + (bits >> 4)) & 0x0F0F0F0F0F0F0F0FLU;
@@ -794,20 +800,20 @@ int one_step_normal(long long *color_table, int *color_combo, int *num_drops_com
   }
 
   if(finish != combo_counter){
-    long long exist_table = color_table[0];
+    unsigned long long exist_table = color_table[0];
     for(num_c = 1;num_c < num_colors;num_c++){
       exist_table = exist_table | color_table[num_c];
     }
     
-    long long exist_org;
+    unsigned long long exist_org;
     do{
       exist_org = exist_table;
       
-      long long exist_u = (exist_table >> WID) | 138538465099776L;
+      unsigned long long exist_u = (exist_table >> WID) | 138538465099776L;
       for(num_c = 0;num_c < num_colors;num_c++){
-	long long color = color_table[num_c];
-	long long color_u = color & exist_u;
-	long long color_d = (color << WID) & (~exist_table) & (~35465847065542656L); // color << WIDが諸悪の根源。非常に扱いに気をつけるべき。bit_tableだとオーバーフローで消えるので(~354...)はいらない。
+	unsigned long long color = color_table[num_c];
+	unsigned long long color_u = color & exist_u;
+	unsigned long long color_d = (color << WID) & (~exist_table) & (~35465847065542656L); // color << WIDが諸悪の根源。非常に扱いに気をつけるべき。bit_tableだとオーバーフローで消えるので(~354...)はいらない。
 	color_table[num_c] = color_u | color_d;
       }
       exist_table = color_table[0];
@@ -826,7 +832,7 @@ int one_step_normal(long long *color_table, int *color_combo, int *num_drops_com
 
 
 #define WID 9
-int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
+int one_step_big(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
   // 0 → width
   // ↓
   // hight
@@ -839,17 +845,17 @@ int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo,
   // 000000111
   // 000000010
   
-  long long isErase_tables[num_colors];
-  //long long isErase_table;
+  unsigned long long isErase_tables[num_colors];
+  //unsigned long long isErase_table;
   int combo_counter = finish;
   int num_c;
-  long long tmp, tmp2;
+  unsigned long long tmp, tmp2;
 
   for(num_c = 0;num_c < num_colors;num_c++){
     
-    long long color = color_table[num_c];
+    unsigned long long color = color_table[num_c];
 
-    long long n, w, s, e;
+    unsigned long long n, w, s, e;
     n = color >> WID;
     w = color >> 1;
     s = color << WID;
@@ -869,10 +875,10 @@ int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo,
 /* #endif */
 
   for(num_c = 0;num_c < num_colors;num_c++){
-    long long isErase_table = isErase_tables[num_c];
+    unsigned long long isErase_table = isErase_tables[num_c];
     color_table[num_c] = color_table[num_c] & (~isErase_table);
 
-    long long p = 1L << (WID+1);
+    unsigned long long p = 1L << (WID+1);
     while(isErase_table) {
       while(!(isErase_table & p)){
 	p = p << 1;
@@ -880,7 +886,7 @@ int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo,
       
       tmp = p;
       color_combo[combo_counter] = num_c;
-      long long tmp_old;
+      unsigned long long tmp_old;
       do{
 	tmp_old = tmp;
 	tmp = (tmp | (tmp << 1) | (tmp >> 1) | (tmp << WID) | (tmp >> WID)) & isErase_table;
@@ -895,7 +901,7 @@ int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo,
 //       b6 = tmp >> (WID*6+1) & 127;
 //       num_drops_combo[combo_counter] = bit_count_table[b1] + bit_count_table[b2] 
 // 	+ bit_count_table[b3] + bit_count_table[b4] + bit_count_table[b5] + bit_count_table[b6];
-      long long bits = tmp;
+      unsigned long long bits = tmp;
       bits = (bits & 0x5555555555555555LU) + ((bits >> 1) & 0x5555555555555555LU);
       bits = (bits & 0x3333333333333333LU) + ((bits >> 2) & 0x3333333333333333LU);
       bits = (bits + (bits >> 4)) & 0x0F0F0F0F0F0F0F0FLU;
@@ -922,21 +928,21 @@ int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo,
   }
   
   if(finish != combo_counter){
-    long long exist_table = color_table[0];
+    unsigned long long exist_table = color_table[0];
     for(num_c = 1;num_c < num_colors;num_c++){
       exist_table = exist_table | color_table[num_c];
     }
     
-    long long exist_org;
+    unsigned long long exist_org;
     do{
       exist_org = exist_table;
       
-      long long exist_u = (exist_table >> WID) | 4575657221408423936L;
+      unsigned long long exist_u = (exist_table >> WID) | 4575657221408423936L;
       
       for(num_c = 0;num_c < num_colors;num_c++){
-	long long color = color_table[num_c];
-	long long color_u = color & exist_u;
-	long long color_d = (color << WID) & (~exist_table);
+	unsigned long long color = color_table[num_c];
+	unsigned long long color_u = color & exist_u;
+	unsigned long long color_d = (color << WID) & (~exist_table);
 	color_table[num_c] = color_u | color_d;
       }
       exist_table = color_table[0];
@@ -951,12 +957,12 @@ int one_step_big(long long *color_table, int *color_combo, int *num_drops_combo,
 #undef WID
 
 
-void print_table(long long *color_table, int width, int hight){
+void print_table(const unsigned long long *color_table, const int width, const int hight){
 
   int i, j;
   for(i = 1;i <= hight;i++){
     for(j = 1;j <= width;j++){
-      long long p = (1L << ((width+2)*i+j));
+      unsigned long long p = (1L << ((width+2)*i+j));
       if((color_table[0] & p) == p)
 	printf("G ");
       else if((color_table[1] & p) == p)
@@ -970,11 +976,11 @@ void print_table(long long *color_table, int width, int hight){
 }
 
 
-void print_table2(long long color_table, int width, int hight){
+void print_table2(const unsigned long long color_table, const int width, const int hight){
   int i, j;
   for(i = 1;i <= hight;i++){
     for(j = 1;j <= width;j++){
-      long long p = (1L << ((width+2)*i+j));
+      unsigned long long p = (1L << ((width+2)*i+j));
       printf("%d ", (color_table & p) == p);
     }
     putchar('\n');
@@ -982,12 +988,12 @@ void print_table2(long long color_table, int width, int hight){
   putchar('\n');
 }
 
-void ID2table(long long ID, int width, int hight){
+void ID2table(const unsigned long long ID, const int width, const int hight){
 
   int i, j;
   for(i = 0;i < hight;i++){
     for(j = 0;j < width;j++){
-      long long p = (1L << ((width)*i+j));
+      unsigned long long p = (1L << ((width)*i+j));
       if((ID & p) == p)
 	printf("G ");
       else 
@@ -1002,8 +1008,8 @@ void ID2table(long long ID, int width, int hight){
 float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, int *isLine_combo, int LS, int strong, float line, float way){
   // used for simulation mode
   // [FIXME] check only Green attack
+  const float AT = 1.0;
   int num_line = 0;
-  float AT = 1.0;
   float attack = 0;
   float l = 1.0;
   int i;
@@ -1103,11 +1109,11 @@ float return_attack(int combo_counter, int *color_combo, int *num_drops_combo, i
   return attack;
 }
 
-void fill_random(long long *color_table, int width, int hight){
+void fill_random(unsigned long long *color_table, int width, int hight){
   int i, j, k;
   for(i = 1;i <= hight;i++){
     for(j = 1;j <= width;j++){
-      long long p = (1L << ((width+2)*i+j));
+      unsigned long long p = (1L << ((width+2)*i+j));
       int flag = 1;
       for(k = 0;k < 6;k++){
 	if((color_table[k] & p) == p){
@@ -1122,12 +1128,7 @@ void fill_random(long long *color_table, int width, int hight){
   }
 }
 
-void simulate_average(void (*gt)(long long, long long*), int (*os)(long long*, int*, int*, int*, int, int), long long *MID, float *MP, int num_attacks, int width, int hight, int LS, int isStrong, float line, float way){
-
-  int num_threads = 1;
-#ifdef _OPENMP
-  num_threads = omp_get_max_threads();
-#endif
+void simulate_average(const int table_size, unsigned long long * const MID, float * const MP, const int num_attacks, const int width, const int hight, const int LS, const int isStrong, const float line, const float way){
 
   int combo_length = 100;
   int rank = RANKINGLENGTH;
@@ -1142,24 +1143,47 @@ void simulate_average(void (*gt)(long long, long long*), int (*os)(long long*, i
 
 #pragma omp parallel for private(color_combo, num_drops_combo, isLine_combo, j) 
   for(i = 0;i < rank;i++){
-    long long tableID = MID[i];
+    unsigned long long tableID = MID[i];
     float pave = 0.0;
     float cave = 0.0;
     float pmin = 1000000000.0;
     int cmin = combo_length;
     for(j = 0;j < 10000;j++){
-      init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
+      //init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
       int combo_counter = 0;
-      long long color_table[6];
+      unsigned long long color_table[6];
       int num_c;
       for(num_c = 0;num_c < 6;num_c++){
 	color_table[num_c] = 0;
       }
-      gt(tableID, color_table);
+      switch(table_size){
+      case SMALL_TABLE:
+	generate_table_small(tableID, color_table);
+	break;
+      case NORMAL_TABLE:
+	generate_table_normal(tableID, color_table);
+	break;
+      case BIG_TABLE:
+	generate_table_big(tableID, color_table);
+	break;
+      default:
+	fprintf(stderr, "unknown table size\n");
+	exit(1);
+      }
       int returned_combo_counter = 0;
       do{
 	combo_counter = returned_combo_counter;
-	returned_combo_counter = os(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	switch(table_size){
+	case SMALL_TABLE:
+	  returned_combo_counter = one_step_small(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	  break;
+	case NORMAL_TABLE:
+	  returned_combo_counter = one_step_normal(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	  break;
+	case BIG_TABLE:
+	  returned_combo_counter = one_step_big(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	  break;
+	}
 	fill_random(color_table, width, hight);
       }while(returned_combo_counter != combo_counter);
       float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, line, way);

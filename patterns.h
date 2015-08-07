@@ -1,4 +1,4 @@
-long long num_patterns20[21] = {
+unsigned long long num_patterns20[21] = {
   1,
   12,
   102,
@@ -22,7 +22,7 @@ long long num_patterns20[21] = {
   1
 };
 
-long long num_patterns30[31] = {
+unsigned long long num_patterns30[31] = {
   1,
   15,
   225,
@@ -56,7 +56,7 @@ long long num_patterns30[31] = {
   1
 };
 
-long long num_patterns42[43] = {
+unsigned long long num_patterns42[43] = {
   1,
   24,
   447,
