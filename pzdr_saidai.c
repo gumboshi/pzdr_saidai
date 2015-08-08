@@ -40,6 +40,7 @@ int main(int argc, char* argv[]){
   int line = 0;
   int way = 0;
   int table_size = NORMAL_TABLE;
+  unsigned seed;
   if (argc != 1) {
     for (i = 1; i < argc; i++) {
       if (strcmp(argv[i], "-s") == 0) {
@@ -87,7 +88,7 @@ int main(int argc, char* argv[]){
       }
       else if (strcmp(argv[i], "-ave") == 0) {
 	simuave = 1;
-	srand((unsigned) time(NULL));
+	//srand((unsigned int)time(NULL));
       }
 #ifdef CUDA
       else if (strcmp(argv[i], "-gpu") == 0) {
@@ -298,7 +299,7 @@ void create_half_tableID(int *tableID_half_table, int *tableID_half_prefix, int 
 }
  
 #define WID 7
-void generate_table_small(unsigned long long tableID, unsigned long long *color_table){
+inline void generate_table_small(unsigned long long tableID, unsigned long long *color_table){
 
   unsigned long long ID = tableID;
   unsigned long long b0 = ID & 31;
@@ -319,7 +320,7 @@ void generate_table_small(unsigned long long tableID, unsigned long long *color_
 #undef WID
 
 #define WID 8
-void generate_table_normal(unsigned long long tableID, unsigned long long *color_table){
+inline void generate_table_normal(unsigned long long tableID, unsigned long long *color_table){
 
   unsigned long long ID = tableID;
   unsigned long long b0 = ID & 63;
@@ -342,7 +343,7 @@ void generate_table_normal(unsigned long long tableID, unsigned long long *color
 #undef WID
 
 #define WID 9
-void generate_table_big(unsigned long long tableID, unsigned long long *color_table){
+inline void generate_table_big(unsigned long long tableID, unsigned long long *color_table){
    
   unsigned long long b0, b1, b2, b3, b4, b5;
   unsigned long long ID = tableID;
@@ -398,8 +399,8 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
   int num_attacks;
 
   for(num_attacks = start;num_attacks <= end;num_attacks++){
-    printf("calculating %2d-%2d & %2d-%2d ...\n", num_attacks, width*hight-num_attacks, width*hight-num_attacks, num_attacks);
     if(half_table_size < num_attacks && num_attacks <= width*hight-start) break;
+    printf("calculating %2d-%2d & %2d-%2d ...\n", num_attacks, width*hight-num_attacks, width*hight-num_attacks, num_attacks);
 
     if(num_attacks == half_table_size){
       for(i = 0;i < num_threads;i++){
@@ -746,7 +747,7 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
 }
 
 #define WID 7
-int one_step_small(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
+inline int one_step_small(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
   // 0 → width
   // ↓
   // hight
@@ -877,7 +878,7 @@ int one_step_small(unsigned long long *color_table, int *color_combo, int *num_d
 
 
 #define WID 8
-int one_step_normal(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
+inline int one_step_normal(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
   // 0 → width
   // ↓
   // hight
@@ -1009,7 +1010,7 @@ int one_step_normal(unsigned long long *color_table, int *color_combo, int *num_
 
 
 #define WID 9
-int one_step_big(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
+inline int one_step_big(unsigned long long *color_table, int *color_combo, int *num_drops_combo, int *isLine_combo, int finish, int num_colors){
   // 0 → width
   // ↓
   // hight
@@ -1428,7 +1429,7 @@ void return_attack_double(float *power, const int combo_counter, int *const colo
   power[1] = attack_s * (1+0.25*(combo_counter-1)) * AT * l_s * (1+0.1*line*num_line_m);
 }
 
-void fill_random(unsigned long long *color_table, const int width, const int hight){
+void fill_random(unsigned long long *color_table, const int width, const int hight, /*struct drand48_data drand_buf*/ unsigned int *seed){
   int i, j, k;
   for(i = 1;i <= hight;i++){
     for(j = 1;j <= width;j++){
@@ -1440,7 +1441,10 @@ void fill_random(unsigned long long *color_table, const int width, const int hig
 	}
       }
       if(flag){
-	int color = rand()%6;
+/* 	double rand; */
+/* 	drand48_r(&drand_buf,&rand); */
+/* 	int color = ((int)rand)%6; */
+	int color = rand_r(seed)%6;
 	color_table[color] = color_table[color] | p;
       }
     }
@@ -1449,77 +1453,88 @@ void fill_random(unsigned long long *color_table, const int width, const int hig
 
 void simulate_average(const int table_size, unsigned long long * const MID, float * const MP, const int num_attacks, const int width, const int hight, const int LS, const int isStrong, const float line, const float way){
 
-  int combo_length = 100;
-  int rank = RANKINGLENGTH;
+  const int combo_length = 100;
+  const int rank = RANKINGLENGTH;
   int i, j;
-  int color_combo[combo_length];
-  int num_drops_combo[combo_length];
-  int isLine_combo[combo_length];
-  float average_power[RANKINGLENGTH];
-  float min_power[RANKINGLENGTH];
-  float average_combo[RANKINGLENGTH];
-  int   min_combo[RANKINGLENGTH];
+  float average_power[rank];
+  float min_power[rank];
+  float average_combo[rank];
+  int   min_combo[rank];
+  unsigned long long tableID;
+  unsigned long long color_table[6];
+  //struct drand48_data drand_buf;
 
-#pragma omp parallel for private(color_combo, num_drops_combo, isLine_combo, j) 
-  for(i = 0;i < rank;i++){
-    unsigned long long tableID = MID[i];
-    float pave = 0.0;
-    float cave = 0.0;
-    float pmin = 1000000000.0;
-    int cmin = combo_length;
-    for(j = 0;j < 10000;j++){
-      //init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
-      int combo_counter = 0;
-      unsigned long long color_table[6];
-      int num_c;
-      for(num_c = 0;num_c < 6;num_c++){
-	color_table[num_c] = 0;
-      }
-      switch(table_size){
-      case SMALL_TABLE:
-	generate_table_small(tableID, color_table);
-	break;
-      case NORMAL_TABLE:
-	generate_table_normal(tableID, color_table);
-	break;
-      case BIG_TABLE:
-	generate_table_big(tableID, color_table);
-	break;
-      default:
-	fprintf(stderr, "unknown table size\n");
-	exit(1);
-      }
-      int returned_combo_counter = 0;
-      do{
-	combo_counter = returned_combo_counter;
+#pragma omp parallel private(i,j, tableID, color_table)
+  {
+    int seed = 98503+(unsigned)time(NULL);
+#ifdef __OPENMP
+    seed = seed + omp_get_thread_num()*1999;
+#endif
+    //srand48_r(seed,&drand_buf);
+#pragma omp for
+    for(i = 0;i < rank;i++){
+      tableID = MID[i];
+      float pave = 0.0;
+      float cave = 0.0;
+      float pmin = 1000000000.0;
+      int cmin = combo_length;
+      for(j = 0;j < 10000;j++){
+      
+	//init_combo_info(color_combo, num_drops_combo, isLine_combo, combo_length);
+	int color_combo[combo_length];
+	int num_drops_combo[combo_length];
+	int isLine_combo[combo_length];
+	int num_c;
+	for(num_c = 0;num_c < 6;num_c++){
+	  color_table[num_c] = 0;
+	}
 	switch(table_size){
 	case SMALL_TABLE:
-	  returned_combo_counter = one_step_small(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	  generate_table_small(tableID, color_table);
 	  break;
 	case NORMAL_TABLE:
-	  returned_combo_counter = one_step_normal(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	  generate_table_normal(tableID, color_table);
 	  break;
 	case BIG_TABLE:
-	  returned_combo_counter = one_step_big(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	  generate_table_big(tableID, color_table);
 	  break;
+	default:
+	  fprintf(stderr, "unknown table size\n");
+	  exit(1);
 	}
-	fill_random(color_table, width, hight);
-      }while(returned_combo_counter != combo_counter);
-      float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, line, way);
-      if(power < pmin){
-	pmin = power;
+	int combo_counter = 0;
+	int returned_combo_counter = 0;
+	do{
+	  combo_counter = returned_combo_counter;
+	  switch(table_size){
+	  case SMALL_TABLE:
+	    returned_combo_counter = one_step_small(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	    break;
+	  case NORMAL_TABLE:
+	    returned_combo_counter = one_step_normal(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	    break;
+	  case BIG_TABLE:
+	    returned_combo_counter = one_step_big(color_table, color_combo, num_drops_combo, isLine_combo, combo_counter, 6);
+	    break;
+	  }
+	  fill_random(color_table, width, hight, /*drand_buf*/&seed);
+	}while(returned_combo_counter != combo_counter);
+	float power = return_attack(combo_counter, color_combo, num_drops_combo, isLine_combo, LS, isStrong, line, way);
+	if(power < pmin){
+	  pmin = power;
+	}
+	if(combo_counter < cmin){
+	  cmin = combo_counter;
+	}
+	pave += power;
+	cave += combo_counter;
       }
-      if(combo_counter < cmin){
-	cmin = combo_counter;
-      }
-      pave += power;
-      cave += combo_counter;
-    }
-    average_combo[i] = cave/10000.0;
-    average_power[i] = pave/10000.0;
-    min_combo[i] = cmin;
-    min_power[i] = pmin;
-  } 
+      average_combo[i] = cave/10000.0;
+      average_power[i] = pave/10000.0;
+      min_combo[i] = cmin;
+      min_power[i] = pmin;
+    } 
+  }
   printf("rank,tableID      ,power     ,ave power ,min power ,ave combo ,min combo\n");
   for(i = 0;i < rank;i++){
     printf("%4d,%13lld,%10.3f,%10.3f,%10.3f,%10.3f,%6d\n",i,MID[i],MP[i],average_power[i],min_power[i],average_combo[i],min_combo[i]);
