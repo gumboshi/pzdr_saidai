@@ -1,14 +1,14 @@
 
 #useCUDA := true
-NUM_BLOCK := 52 # for K20c
-#NUM_BLOCK = 56 # for K20X
+NUM_BLOCK := 65 # for K20c
+#NUM_BLOCK = 70 # for K20X
 
 CUDATOP := /usr/local/cuda/
 NVCC := nvcc
 NVFLAGS := -O3 -arch=sm_35 -DNUM_BLOCK=$(NUM_BLOCK) -I.
 
 # CC := icc
-# CPP := icpp
+# CPP := icc
 # CFLAGS := -O3 -openmp -I.
 # LFLAGS := -openmp
 

@@ -22,6 +22,10 @@ extern "C"{
   /*   void simulate_average(void (*const gt)(long long, long long*), int (*const os)(long long*, int*, int*, int*, int, int), long long *MID, float *MP, const int num_attacks, const int width, const int hight, const int LS, const int isStrong, const float line, const float way); */
   void simulate_average(const int table_size, unsigned long long * const MID, float * const MP, const int num_attacks, const int width, const int hight, const int LS, const int isStrong, const float line, const float way);
 
+#ifdef TIME
+  double gettimeofday_sec();
+#endif
+
 #ifdef CUDA
   void simulate_all_cuda(const int table_size, const int start, const int end, /*int *bit_count_table,*/ int *const reversed_bit_table, int *const tableID_half_table, int *const tableID_half_prefix, /*long long *const num_patterns,*/ int *const num_patterns_half, const int width, const int hight, const int combo_length, const int LS, const int isStrong, const int line, const int way, const int simuave);
 #endif
