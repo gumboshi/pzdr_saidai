@@ -30,7 +30,7 @@ GPU(Nvidia K20) < 1.5 hour.
 
 CPU(6core Xeon) < 1 day.
 
-CPU(1core Xeon) < 5 day.
+CPU(1core Xeon) < 4 day.
 
 
 ## Similar software
@@ -54,7 +54,7 @@ $ make gpu
 ```
 (Optional) If you know the number of SMX of your GPU, it is better for your system.
 ```shell
-$ make gpu NUM_BLOCK=(4 * number of SMX)
+$ make gpu NUM_BLOCK=(5 * number of SMX)
 ```
 You don't need gpu version,
 ```shell
