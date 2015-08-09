@@ -1671,8 +1671,8 @@ extern "C"
     const int length = gsize*tsize*LOCALRANKINGLENGTH;
     unsigned long long max_powerID[2*length];
     float max_power[2*length];
-    unsigned long long final_MID[42][rank];
-    float final_MP[42][rank];
+    unsigned long long final_MID[43][rank];
+    float final_MP[43][rank];
     int reverse_length = 1 << width;
     int *tableID_half_table_dev, *tableID_half_prefix_dev, *num_patterns_half_dev;
     //int *bit_count_table_dev, *reversed_bit_table_dev;
@@ -1681,7 +1681,7 @@ extern "C"
     const float pway = pow(1.5,way);
     const int half_table_size = width*hight/2;
 
-    for(i = 0;i < 42;i++){
+    for(i = 0;i < 43;i++){
       final_MID[i][0] = 0xFFFFFFFFFFFFFFFFLU;
     }
 

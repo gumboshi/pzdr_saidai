@@ -451,8 +451,8 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
   const int rank = RANKINGLENGTH;
   unsigned long long max_powerID[num_threads][2][rank];
   float max_power[num_threads][2][rank];
-  unsigned long long final_MID[42][rank];
-  float final_MP[42][rank];
+  unsigned long long final_MID[43][rank];
+  float final_MP[43][rank];
 
   int i, j, k, m;
   int color_combo[combo_length];
@@ -462,7 +462,7 @@ void simulate_all(const int table_size, const int start, const int end, /*int * 
   const int reverse_length = 1 << width;
   int num_attacks;
 
-  for(i = 0;i < 42;i++){
+  for(i = 0;i < 43;i++){
     final_MID[i][0] = 0xFFFFFFFFFFFFFFFFLU;
   }
 
